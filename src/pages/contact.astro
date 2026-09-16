@@ -1,0 +1,66 @@
+---
+import Hashtag from '@/assets/deco/hashtag.svg';
+import Smile from '@/assets/deco/smile.svg';
+import ContactForm from '@/components/sections/ContactForm.astro';
+import Button from '@/components/ui/Button.astro';
+import CheckList from '@/components/ui/CheckList.astro';
+import IconCircle from '@/components/ui/IconCircle.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import { site } from '@/config/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Contact"
+  description="Un petit café ? Parlez-nous de votre projet de site vitrine ou e-commerce : le premier échange est gratuit."
+>
+  <section class="overflow-x-clip bg-cream text-ink">
+    <div class="container-site pt-20 pb-24 lg:pt-28 lg:pb-30">
+      <div class="relative">
+        <SectionHeading
+          level="h1"
+          badge="Contact"
+          title="Un petit café ?"
+          subtitle="Parlez-nous de votre projet, le premier échange est gratuit."
+        />
+        <Smile
+          aria-hidden="true"
+          class="pointer-events-none absolute top-0 left-[8%] hidden w-28 lg:block h-auto text-orange"
+        />
+        <Hashtag
+          aria-hidden="true"
+          class="pointer-events-none absolute top-6 right-[8%] hidden w-20 lg:block h-auto text-orange"
+        />
+      </div>
+
+      <div class="mt-14 grid items-start gap-8 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:gap-12">
+        <aside class="flex flex-col items-start rounded-2xl bg-ink p-6 text-cream sm:p-8 lg:p-10">
+          <IconCircle name="calendar" />
+          <h2 class="mt-6 text-[1.75rem] leading-[1.2] font-bold">Réservez un appel</h2>
+          <p class="mt-4 text-lg leading-normal">
+            Un premier échange pour faire connaissance et parler de votre projet, sans engagement.
+          </p>
+          <CheckList
+            class="mt-8"
+            items={[
+              'Vos objectifs et votre marché',
+              'Le site adapté à votre activité',
+              'Les prochaines étapes',
+            ]}
+          />
+          {site.bookingUrl ? (
+            <Button href={site.bookingUrl} external class="mt-10">
+              Réserver un appel
+            </Button>
+          ) : (
+            <p class="mt-10 text-base text-cream/70">
+              La réservation en ligne arrive bientôt. En attendant, écrivez-nous via le formulaire.
+            </p>
+          )}
+        </aside>
+
+        <ContactForm />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

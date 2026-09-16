@@ -1,0 +1,89 @@
+---
+import Button from '@/components/ui/Button.astro';
+import Icon from '@/components/ui/Icon.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import { bookingHref, isExternalBooking } from '@/config/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+// TODO : faire valider les réponses par l'équipe.
+const faqs = [
+  {
+    question: 'Combien coûte un site ?',
+    answer:
+      'Chaque projet est différent : le budget dépend du type de site, du nombre de pages et des fonctionnalités. Nous établissons un devis clair après un premier échange gratuit.',
+  },
+  {
+    question: 'Combien de temps faut-il pour créer un site ?',
+    answer:
+      "Cela dépend de l'ampleur du projet. Grâce à l'IA, nous accélérons la production sans rogner sur la qualité, et un calendrier précis vous est proposé dès le lancement.",
+  },
+  {
+    question: 'Pourrai-je modifier mon site une fois en ligne ?',
+    answer:
+      'Oui. Dès que le site est en ligne, vous avez la main, et les retours sur le contenu comme sur le design restent illimités.',
+  },
+  {
+    question: 'Mon site sera-t-il bien référencé ?',
+    answer:
+      'Nous concevons des sites rapides, accessibles et structurés pour le référencement naturel, afin que vos clients vous trouvent.',
+  },
+  {
+    question: "Comment utilisez-vous l'IA ?",
+    answer:
+      "L'IA nous aide à aller plus vite, mais c'est votre vision qui guide chaque décision. Chaque livrable est relu et validé par l'équipe.",
+  },
+  {
+    question: 'Comment démarrer ?',
+    answer:
+      'Réservez un appel ou écrivez-nous depuis la page contact : on parle de votre projet, gratuitement.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(({ question, answer }) => ({
+    '@type': 'Question',
+    name: question,
+    acceptedAnswer: { '@type': 'Answer', text: answer },
+  })),
+};
+---
+
+<BaseLayout
+  title="FAQ"
+  description="Prix, délais, référencement, IA : les réponses aux questions fréquentes sur la création de votre site avec CIAAAO Agency."
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>
+  <section class="bg-cream text-ink">
+    <div class="container-site pt-20 pb-24 lg:pt-28 lg:pb-30">
+      <SectionHeading
+        level="h1"
+        badge="FAQ"
+        title="Questions fréquentes"
+        subtitle="Tout ce que vous vous demandez avant de vous lancer."
+      />
+
+      <div class="mx-auto mt-14 flex max-w-3xl flex-col gap-4 lg:mt-20">
+        {faqs.map(({ question, answer }) => (
+          <details class="group rounded-2xl bg-coal text-cream">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-6 rounded-2xl p-6 text-xl leading-snug font-bold [&::-webkit-details-marker]:hidden">
+              {question}
+              <span class="grid size-10 shrink-0 place-items-center rounded-full bg-cream text-orange transition-transform duration-200 group-open:rotate-45">
+                <Icon name="plus" size={20} />
+              </span>
+            </summary>
+            <p class="px-6 pb-6 text-lg leading-normal text-cream/85">{answer}</p>
+          </details>
+        ))}
+      </div>
+
+      <div class="mt-16 flex flex-col items-center gap-6 text-center">
+        <p class="text-xl font-bold">Une autre question ?</p>
+        <Button href={bookingHref} external={isExternalBooking} edge="ink">
+          Un petit café ?
+        </Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

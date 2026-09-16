@@ -1,0 +1,33 @@
+---
+import Exclamation from '@/assets/deco/exclamation.svg';
+import Hashtag from '@/assets/deco/hashtag.svg';
+import Button from '@/components/ui/Button.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page introuvable" noindex>
+  <section class="overflow-hidden bg-cream text-ink">
+    <div class="container-site">
+      <div class="relative flex flex-col items-center py-24 text-center lg:py-40">
+        <Exclamation
+          aria-hidden="true"
+          class="pointer-events-none absolute top-16 left-[10%] hidden w-12 sm:block h-auto text-orange"
+        />
+        <Hashtag
+          aria-hidden="true"
+          class="pointer-events-none absolute right-[10%] bottom-20 hidden w-20 sm:block h-auto text-orange"
+        />
+        <p class="font-display text-[9rem] leading-none text-orange sm:text-[12rem]">404</p>
+        <h1 class="mt-6 text-[2.125rem] leading-[1.2] font-bold sm:text-5xl">
+          Cette page s'est perdue
+        </h1>
+        <p class="mt-5 max-w-xl text-lg leading-normal lg:text-xl">
+          Le lien est peut-être cassé, ou la page n'existe plus.
+        </p>
+        <Button href="/" edge="ink" class="mt-10">
+          Retour à l'accueil
+        </Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,46 @@
+---
+import LegalLayout from '@/layouts/LegalLayout.astro';
+---
+
+<!-- TODO : remplacer les informations surlignées par les informations réelles de l'entreprise. -->
+<LegalLayout
+  title="Mentions légales"
+  description="Mentions légales du site de CIAAAO Agency : éditeur, hébergeur et propriété intellectuelle."
+  updatedAt="16 septembre 2026"
+>
+  <h2>Éditeur du site</h2>
+  <p>
+    Le site est édité par <mark>[raison sociale]</mark>, <mark>[forme juridique]</mark> au capital
+    de <mark>[montant]</mark>, immatriculée sous le numéro <mark>[SIREN / IDE]</mark>, dont le siège
+    social est situé <mark>[adresse]</mark>.
+  </p>
+  <ul>
+    <li>
+      Email : <mark>[adresse email]</mark>
+    </li>
+    <li>
+      Téléphone : <mark>[numéro]</mark>
+    </li>
+    <li>
+      Directeur de la publication : <mark>[nom]</mark>
+    </li>
+  </ul>
+
+  <h2>Hébergement</h2>
+  <p>
+    Le site est hébergé par <mark>[hébergeur : nom, adresse, site web]</mark>.
+  </p>
+
+  <h2>Propriété intellectuelle</h2>
+  <p>
+    L'ensemble des contenus du site (textes, illustrations, logos, visuels) est la propriété de
+    CIAAAO Agency ou de ses partenaires. Toute reproduction, même partielle, est interdite sans
+    autorisation préalable.
+  </p>
+
+  <h2>Données personnelles</h2>
+  <p>
+    Le traitement des données collectées via le site est décrit dans notre{' '}
+    <a href="/confidentialite">politique de confidentialité</a>.
+  </p>
+</LegalLayout>

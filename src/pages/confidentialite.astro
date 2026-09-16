@@ -1,0 +1,56 @@
+---
+import LegalLayout from '@/layouts/LegalLayout.astro';
+---
+
+<!-- TODO : faire valider ce modèle (RGPD / nLPD) et compléter les informations surlignées. -->
+<LegalLayout
+  title="Politique de confidentialité"
+  description="Comment CIAAAO Agency collecte et protège vos données personnelles."
+  updatedAt="16 septembre 2026"
+>
+  <h2>Responsable du traitement</h2>
+  <p>
+    Les données personnelles collectées sur ce site sont traitées par <mark>[raison sociale]</mark>,
+    joignable à l'adresse <mark>[adresse email]</mark>.
+  </p>
+
+  <h2>Données collectées</h2>
+  <p>
+    Nous collectons uniquement les données que vous nous transmettez via le formulaire de contact :
+  </p>
+  <ul>
+    <li>nom et adresse email ;</li>
+    <li>nom de votre entreprise (facultatif) ;</li>
+    <li>type de projet et contenu de votre message.</li>
+  </ul>
+
+  <h2>Finalité</h2>
+  <p>
+    Ces données servent exclusivement à répondre à votre demande et à échanger avec vous au sujet de
+    votre projet. Elles ne sont ni vendues ni cédées à des tiers.
+  </p>
+
+  <h2>Sous-traitants</h2>
+  <p>
+    Les messages du formulaire transitent par <mark>[service d'envoi de formulaire]</mark> et le
+    site est hébergé par <mark>[hébergeur]</mark>.
+  </p>
+
+  <h2>Durée de conservation</h2>
+  <p>
+    Vos données sont conservées pendant <mark>[durée]</mark> à compter de notre dernier échange,
+    puis supprimées.
+  </p>
+
+  <h2>Vos droits</h2>
+  <p>
+    Vous disposez d'un droit d'accès, de rectification, d'effacement et d'opposition sur vos
+    données. Pour l'exercer, écrivez-nous à <mark>[adresse email]</mark>.
+  </p>
+
+  <h2>Cookies</h2>
+  <p>
+    Ce site n'utilise pas de cookies publicitaires ni de traceurs tiers.{' '}
+    <mark>[À mettre à jour si un outil de mesure d'audience est ajouté.]</mark>
+  </p>
+</LegalLayout>

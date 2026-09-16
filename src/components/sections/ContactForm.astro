@@ -1,0 +1,147 @@
+---
+import Button from '@/components/ui/Button.astro';
+import { site } from '@/config/site';
+
+const projectTypes = ['Site vitrine', 'Plateforme e-commerce', 'Refonte de site', 'Autre'];
+
+const field =
+  'mt-2 w-full rounded-xl border-2 border-ink bg-cream px-4 py-3 text-lg text-ink transition-shadow placeholder:text-ink/45 focus:ring-4 focus:ring-orange/30 focus:outline-none';
+const label = 'text-base font-semibold';
+---
+
+<form
+  action={site.contactFormEndpoint || undefined}
+  method="post"
+  class="rounded-2xl border-2 border-ink bg-cream p-6 sm:p-8 lg:p-10"
+  data-contact-form
+  data-endpoint={site.contactFormEndpoint}
+>
+  <h2 class="text-[1.75rem] leading-[1.2] font-bold">Écrivez-nous</h2>
+  <p class="mt-3 text-lg leading-normal text-ink/80">
+    Quelques mots sur votre projet suffisent, on revient vers vous.
+  </p>
+
+  <div class="mt-8 grid gap-6 sm:grid-cols-2">
+    <div>
+      <label for="contact-name" class={label}>
+        Nom
+      </label>
+      <input id="contact-name" name="name" type="text" autocomplete="name" required class={field} />
+    </div>
+    <div>
+      <label for="contact-email" class={label}>
+        Email
+      </label>
+      <input
+        id="contact-email"
+        name="email"
+        type="email"
+        autocomplete="email"
+        required
+        class={field}
+      />
+    </div>
+    <div>
+      <label for="contact-company" class={label}>
+        Entreprise <span class="font-normal text-ink/75">(facultatif)</span>
+      </label>
+      <input
+        id="contact-company"
+        name="company"
+        type="text"
+        autocomplete="organization"
+        class={field}
+      />
+    </div>
+    <div>
+      <label for="contact-type" class={label}>
+        Type de projet
+      </label>
+      <select id="contact-type" name="projectType" class={field}>
+        {projectTypes.map((type) => (
+          <option value={type}>{type}</option>
+        ))}
+      </select>
+    </div>
+    <div class="sm:col-span-2">
+      <label for="contact-message" class={label}>
+        Message
+      </label>
+      <textarea
+        id="contact-message"
+        name="message"
+        rows="6"
+        required
+        placeholder="Votre activité, vos objectifs, vos délais…"
+        class:list={[field, 'resize-y']}
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Anti-spam : champ invisible que seuls les robots remplissent -->
+  <div class="hidden" aria-hidden="true">
+    <label>
+      Ne pas remplir
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" />
+    </label>
+  </div>
+
+  <p class="mt-6 text-sm leading-normal text-ink/70">
+    Vos informations servent uniquement à vous recontacter. Voir notre{' '}
+    <a href="/confidentialite" class="font-semibold underline underline-offset-4 hover:text-orange">
+      politique de confidentialité
+    </a>
+    .
+  </p>
+
+  <div class="mt-8 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+    <Button type="submit" edge="ink" data-submit>
+      Envoyer
+    </Button>
+    <p role="status" aria-live="polite" class="text-base font-semibold" data-status></p>
+  </div>
+</form>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+
+  if (form) {
+    const status = form.querySelector<HTMLElement>('[data-status]');
+    const submit = form.querySelector<HTMLButtonElement>('[data-submit]');
+    const endpoint = form.dataset.endpoint;
+
+    const setStatus = (message: string, tone: 'success' | 'error' | 'pending') => {
+      if (!status) return;
+      status.textContent = message;
+      status.classList.toggle('text-red', tone === 'error');
+      status.classList.toggle('text-ink', tone !== 'error');
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!endpoint) {
+        setStatus("Le formulaire n'est pas encore configuré.", 'error');
+        return;
+      }
+
+      submit?.setAttribute('disabled', '');
+      setStatus('Envoi en cours…', 'pending');
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error(String(response.status));
+        form.reset();
+        setStatus('Merci ! Votre message est bien parti, on vous répond vite.', 'success');
+      } catch {
+        setStatus("Oups, l'envoi a échoué. Réessayez dans un instant.", 'error');
+      } finally {
+        submit?.removeAttribute('disabled');
+      }
+    });
+  }
+</script>
