@@ -1,30 +1,31 @@
 ---
-import DotArrow from '@/assets/deco/dot-arrow.svg';
-import Exclamation from '@/assets/deco/exclamation.svg';
-import Hashtag from '@/assets/deco/hashtag.svg';
-import Smile from '@/assets/deco/smile.svg';
+import Sketch from '@/components/deco/Sketch.astro';
 import Button from '@/components/ui/Button.astro';
 import Logo from '@/components/ui/Logo.astro';
 ---
 
 <section class="overflow-hidden bg-cream text-ink">
   <div class="container-site">
-    <div class="relative pt-32 pb-14 xl:pt-49 xl:pb-17.5">
-      <!-- Décorations (positions relevées sur la maquette 1920px) -->
-      <Smile
-        aria-hidden="true"
+    <div class="relative pt-32 pb-14 xl:pt-49 xl:pb-17.5" data-sketch-scene>
+      <!-- Décorations dessinées à la main, dans le sens horaire autour du titre (positions : maquette 1920px) -->
+      <Sketch
+        name="smile"
+        order={1}
         class="pointer-events-none absolute top-6 left-0 w-16 sm:top-10 sm:w-24 xl:top-[242px] xl:left-[10.1%] xl:w-[136px] h-auto text-orange"
       />
-      <DotArrow
-        aria-hidden="true"
+      <Sketch
+        name="dot-arrow"
+        order={2}
         class="pointer-events-none absolute top-4 right-0 w-20 sm:top-12 sm:w-32 xl:top-[253px] xl:right-auto xl:left-[77.8%] xl:w-[167px] h-auto text-orange"
       />
-      <Exclamation
-        aria-hidden="true"
+      <Sketch
+        name="exclamation"
+        order={4}
         class="pointer-events-none absolute bottom-6 left-2 hidden w-9 sm:block xl:top-[582px] xl:bottom-auto xl:left-[8.8%] xl:w-[63px] h-auto text-orange"
       />
-      <Hashtag
-        aria-hidden="true"
+      <Sketch
+        name="hashtag"
+        order={3}
         class="pointer-events-none absolute right-2 bottom-8 hidden w-16 sm:block xl:top-[632px] xl:right-auto xl:bottom-auto xl:left-[88.3%] xl:w-[101px] h-auto text-orange"
       />
 

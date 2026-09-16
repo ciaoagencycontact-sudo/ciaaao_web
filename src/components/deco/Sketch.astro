@@ -1,0 +1,77 @@
+---
+/**
+ * Décoration « dessinée à la main » : la forme d'origine est révélée par un masque
+ * dont les traits (sketches.json, dans l'ordre du geste) sont tracés par le module motion/sketch.
+ * Sans JS ou en mouvement réduit, les traits sont complets : la décoration s'affiche normalement.
+ *
+ * Les décorations d'un même conteneur `data-sketch-scene` sont dessinées à la suite,
+ * comme par une seule main, dans l'ordre de leur prop `order`.
+ */
+import dotArrow from '@/assets/deco/dot-arrow.svg?raw';
+import exclamation from '@/assets/deco/exclamation.svg?raw';
+import hashtag from '@/assets/deco/hashtag.svg?raw';
+import smile from '@/assets/deco/smile.svg?raw';
+import sketches from './sketches.json';
+
+const sources = { 'dot-arrow': dotArrow, exclamation, hashtag, smile };
+
+interface Props {
+  name: keyof typeof sketches;
+  /** Position dans la séquence de dessin de la scène. */
+  order?: number;
+  class?: string;
+}
+
+const { name, order = 0, class: className } = Astro.props;
+
+const raw = sources[name];
+const [, width, height] = raw.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/) ?? [];
+const shape = raw.match(/ d="([^"]+)"/)?.[1];
+const { width: defaultWidth, strokes } = sketches[name];
+const maskId = `sketch-${name}-${crypto.randomUUID().slice(0, 8)}`;
+
+/**
+ * Ajoute un court trait d'approche avant le début du tracé, hors de la forme :
+ * le bout arrondi du « crayon » entre ainsi progressivement dans le trait au lieu d'apparaître d'un bloc.
+ */
+function withLeadIn(d: string, strokeWidth: number) {
+  const numbers = d.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+  if (numbers.length < 4) return d;
+  const [x0, y0, x1, y1] = numbers;
+  const length = Math.hypot(x0 - x1, y0 - y1) || 1;
+  const lead = strokeWidth + 6;
+  const sx = x0 + ((x0 - x1) / length) * lead;
+  const sy = y0 + ((y0 - y1) / length) * lead;
+  const rest = d.replace(/^M\s*-?\d+(\.\d+)?[\s,]+-?\d+(\.\d+)?/, '');
+  return `M${sx.toFixed(1)} ${sy.toFixed(1)} L${x0} ${y0}${rest}`;
+}
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox={`0 0 ${width} ${height}`}
+  aria-hidden="true"
+  class={className}
+  data-anim="sketch"
+  data-sketch-order={order}
+>
+  <defs>
+    <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width={width} height={height}>
+      {strokes.map((stroke) => {
+        const strokeWidth = (stroke as { width?: number }).width ?? defaultWidth;
+        return (
+          <path
+            d={withLeadIn(stroke.d, strokeWidth)}
+            fill="none"
+            stroke="#fff"
+            stroke-width={strokeWidth}
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            data-stroke
+          />
+        );
+      })}
+    </mask>
+  </defs>
+  <path fill="currentColor" fill-rule="evenodd" d={shape} mask={`url(#${maskId})`}></path>
+</svg>

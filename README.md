@@ -56,9 +56,25 @@ src/
 - Couleurs : `cream`, `orange`, `orange-light`, `salmon`, `red`, `ink`, `black`, `coal`, `muted`
   (ex. `bg-cream`, `text-orange`), définies dans `src/styles/global.css`.
 - Polices : `font-display` (Bitronik) et `font-sans` (DM Sans), chargées via l'API Fonts d'Astro.
-- Animation d'apparition : ajouter l'attribut `data-reveal` (délai optionnel via `--reveal-delay`).
 - Espaces : Astro 7 applique les règles JSX. Entre du texte et une balise inline placées sur
   deux lignes, écrire `{' '}` pour conserver l'espace.
+
+## Animations
+
+GSAP (ScrollTrigger, et SplitText / DrawSVG disponibles) et Lenis pour le scroll fluide, dans
+[`src/scripts/motion/`](src/scripts/motion/) :
+
+- `index.ts` : point d'entrée chargé par `BaseLayout`, qui lance Lenis et les modules ;
+- `lenis.ts` : scroll fluide synchronisé avec ScrollTrigger, ancres décalées sous le header ;
+- `media.ts` : breakpoints et `gsap.matchMedia()` partagé (desktop / mobile / mouvement réduit) ;
+- `modules/` : une animation = un module (ex. `reveal.ts`).
+
+Règles :
+
+- Apparition au scroll : attribut `data-reveal`, délai optionnel via `--reveal-delay`.
+- Nouvelle animation : créer `modules/<nom>.ts`, cibler `[data-anim="<nom>"]`, l'appeler dans `index.ts`.
+- Avec « réduire les animations », ni Lenis ni animations : le contenu s'affiche directement.
+- Animer uniquement `transform` et `opacity`.
 
 ## Déploiement
 
