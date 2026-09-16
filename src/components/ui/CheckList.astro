@@ -1,0 +1,21 @@
+---
+import Icon from '@/components/ui/Icon.astro';
+
+interface Props {
+  items: string[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props;
+---
+
+<ul class:list={['flex flex-col gap-5', className]}>
+  {items.map((item) => (
+    <li class="flex items-center gap-3 text-lg leading-snug text-orange-light/75">
+      <span class="grid size-7 shrink-0 place-items-center rounded-full bg-cream text-orange">
+        <Icon name="check" size={16} stroke-width="2.5" />
+      </span>
+      {item}
+    </li>
+  ))}
+</ul>

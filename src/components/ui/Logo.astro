@@ -1,0 +1,31 @@
+---
+import LogoMark from '@/assets/brand/logo-mark.svg';
+import LogoWordmark from '@/assets/brand/logo-wordmark.svg';
+
+interface Props {
+  /**
+   * Hauteur du logotype « CIAAAO Agency » en px ; le reste est proportionnel.
+   * Sans valeur, la taille vient de la variable CSS --logo-h (ex. classe `[--logo-h:120px]`).
+   */
+  height?: number;
+  /** Classe de couleur du pictogramme (barres). */
+  markClass?: string;
+  /** Classe de couleur du logotype. */
+  wordmarkClass?: string;
+  class?: string;
+}
+
+const { height, markClass, wordmarkClass, class: className } = Astro.props;
+---
+
+<!-- Proportions relevées sur la maquette : barres 198×203, logotype 339×245, espace de 45px. -->
+<span
+  class:list={['inline-flex items-center gap-[calc(var(--logo-h,40px)*0.1837)]', className]}
+  style={height ? { '--logo-h': `${height}px` } : undefined}
+>
+  <LogoMark
+    aria-hidden="true"
+    class:list={['h-[calc(var(--logo-h,40px)*0.8286)] w-auto', markClass]}
+  />
+  <LogoWordmark aria-hidden="true" class:list={['h-(--logo-h,40px) w-auto', wordmarkClass]} />
+</span>

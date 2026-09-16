@@ -1,0 +1,24 @@
+---
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Date de dernière mise à jour, ex. « 16 septembre 2026 ». */
+  updatedAt: string;
+}
+
+const { title, description, updatedAt } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="bg-cream text-ink">
+    <div class="container-site pt-20 pb-24 lg:pt-28 lg:pb-30">
+      <SectionHeading level="h1" title={title} subtitle={`Dernière mise à jour : ${updatedAt}`} />
+      <div class="prose-legal mx-auto mt-14 max-w-3xl lg:mt-20">
+        <slot />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

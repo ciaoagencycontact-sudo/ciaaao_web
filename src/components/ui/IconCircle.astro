@@ -1,0 +1,19 @@
+---
+import Icon, { type IconName } from '@/components/ui/Icon.astro';
+
+interface Props {
+  name: IconName;
+  class?: string;
+}
+
+const { name, class: className } = Astro.props;
+---
+
+<span
+  class:list={[
+    'grid size-14 shrink-0 place-items-center rounded-full bg-cream text-orange',
+    className,
+  ]}
+>
+  <Icon name={name} size={24} />
+</span>

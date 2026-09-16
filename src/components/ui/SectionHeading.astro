@@ -1,0 +1,61 @@
+---
+import Badge from '@/components/ui/Badge.astro';
+import type { Theme } from '@/lib/theme';
+
+interface Props {
+  /** Un `\n` force un retour à la ligne à partir de la tablette. */
+  title: string;
+  badge?: string;
+  subtitle?: string;
+  theme?: Theme;
+  /** h1 sur les pages internes, h2 sur la landing. */
+  level?: 'h1' | 'h2';
+  /** Largeur max du sous-titre (défaut : 600px). */
+  subtitleClass?: string;
+  class?: string;
+}
+
+const {
+  title,
+  badge,
+  subtitle,
+  theme = 'light',
+  level: Heading = 'h2',
+  subtitleClass = 'max-w-150',
+  class: className,
+} = Astro.props;
+---
+
+<div
+  data-reveal
+  class:list={['relative mx-auto flex max-w-4xl flex-col items-center text-center', className]}
+>
+  {badge && <Badge theme={theme}>{badge}</Badge>}
+  <Heading
+    class:list={[
+      'text-[2.125rem] leading-[1.2] font-bold text-balance sm:text-[2.5rem] lg:text-5xl',
+      badge && 'mt-4',
+      theme === 'light' ? 'text-ink' : 'text-cream',
+    ]}
+  >
+    {title.split('\n').map((line, index) => (
+      <Fragment>
+        {index > 0 && ' '}
+        {index > 0 && <br class="max-sm:hidden" />}
+        {line}
+      </Fragment>
+    ))}
+  </Heading>
+  {subtitle && (
+    <p
+      class:list={[
+        'mt-5 text-lg leading-normal text-pretty lg:mt-6 lg:text-xl',
+        subtitleClass,
+        theme === 'light' ? 'text-ink/80' : 'text-cream',
+      ]}
+    >
+      {subtitle}
+    </p>
+  )}
+  <slot />
+</div>

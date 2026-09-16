@@ -1,0 +1,108 @@
+---
+import Button from '@/components/ui/Button.astro';
+import Icon from '@/components/ui/Icon.astro';
+import Logo from '@/components/ui/Logo.astro';
+import { bookingHref, isExternalBooking, site } from '@/config/site';
+
+const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+---
+
+<header class="sticky top-0 z-50 bg-orange text-cream">
+  <div class="container-site flex h-18 items-center justify-between gap-6 lg:h-[85px]">
+    <a href="/" class="rounded-sm" aria-label={`${site.name}, accueil`}>
+      <Logo class="[--logo-h:36px] lg:[--logo-h:40px]" />
+    </a>
+
+    <nav aria-label="Navigation principale" class="hidden items-center gap-12 lg:flex">
+      <ul class="flex items-center gap-12">
+        {site.mainNav.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              aria-current={isCurrent(link.href) ? 'page' : undefined}
+              class="text-xl font-semibold decoration-2 underline-offset-8 transition-colors hover:text-ink aria-[current=page]:underline"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <Button variant="cta" href={bookingHref} external={isExternalBooking}>
+        Un petit café ?
+      </Button>
+    </nav>
+
+    <button
+      type="button"
+      class="-mr-2 grid size-11 place-items-center rounded-lg lg:hidden"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+      data-menu-toggle
+    >
+      <span class="sr-only" data-menu-label>
+        Ouvrir le menu
+      </span>
+      <Icon name="menu" size={28} data-menu-icon="open" />
+      <Icon name="close" size={28} class="hidden" data-menu-icon="close" />
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="hidden border-t border-cream/25 lg:hidden" data-menu>
+    <nav
+      aria-label="Navigation mobile"
+      class="container-site flex flex-col items-start gap-6 pt-4 pb-8"
+    >
+      <ul class="flex w-full flex-col">
+        {site.mainNav.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              aria-current={isCurrent(link.href) ? 'page' : undefined}
+              class="block py-3 text-2xl font-semibold aria-[current=page]:underline"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <Button variant="cta" href={bookingHref} external={isExternalBooking}>
+        Un petit café ?
+      </Button>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+
+  if (toggle && menu) {
+    const label = toggle.querySelector('[data-menu-label]');
+    const iconOpen = toggle.querySelector('[data-menu-icon="open"]');
+    const iconClose = toggle.querySelector('[data-menu-icon="close"]');
+
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('hidden', !open);
+      iconOpen?.classList.toggle('hidden', open);
+      iconClose?.classList.toggle('hidden', !open);
+      if (label) label.textContent = open ? 'Fermer le menu' : 'Ouvrir le menu';
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
+</script>

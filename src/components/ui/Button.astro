@@ -1,0 +1,59 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Variant = 'primary' | 'cta' | 'compact';
+
+type Props = {
+  /** Lien ; sans href, un <button> est rendu. */
+  href?: string;
+  variant?: Variant;
+  /** Couleur de la bordure décalée et du texte (variante primary). */
+  edge?: 'cream' | 'ink';
+  /** Ouvre le lien dans un nouvel onglet. */
+  external?: boolean;
+  type?: 'button' | 'submit';
+  class?: string;
+} & Omit<HTMLAttributes<'a'> & HTMLAttributes<'button'>, 'type' | 'class'>;
+
+const {
+  href,
+  variant = 'primary',
+  edge = 'cream',
+  external = false,
+  type = 'button',
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const base =
+  'inline-flex items-center justify-center gap-2 font-display leading-none whitespace-nowrap transition duration-200 ease-out select-none disabled:pointer-events-none disabled:opacity-60';
+
+const variants: Record<Variant, string> = {
+  // Pilule orange avec bordure et ombre décalée (« Réserver un appel », « Voir le site »).
+  primary: [
+    'min-w-47 rounded-full border-4 bg-orange px-[18px] py-2.5 text-[26px]',
+    'hover:translate-y-0.5 active:translate-y-[7px]',
+    edge === 'cream'
+      ? 'border-cream text-cream shadow-[0_7px_0_0_var(--color-cream)] hover:shadow-[0_5px_0_0_var(--color-cream)] active:shadow-none'
+      : 'border-ink text-ink shadow-[0_7px_0_0_var(--color-ink)] hover:shadow-[0_5px_0_0_var(--color-ink)] active:shadow-none',
+  ].join(' '),
+  // Bouton crème du header (« Un petit café ? »).
+  cta: 'rounded-xl bg-cream px-7 py-[11px] text-[26px] text-orange shadow-[2px_3px_0_0_rgb(0_0_0/0.12)] hover:-translate-y-0.5 hover:shadow-[3px_5px_0_0_rgb(0_0_0/0.16)] active:translate-y-0 active:shadow-none',
+  // Petit bouton du hero (« Commencer »).
+  compact:
+    'rounded-full bg-orange px-6 py-2.5 text-xl text-cream uppercase hover:-translate-y-0.5 hover:bg-[#e04e19] active:translate-y-0',
+};
+
+const classes = [base, variants[variant], className];
+const externalAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+
+{href ? (
+  <a href={href} class:list={classes} {...externalAttrs} {...attrs}>
+    <slot />
+  </a>
+) : (
+  <button type={type} class:list={classes} {...attrs}>
+    <slot />
+  </button>
+)}

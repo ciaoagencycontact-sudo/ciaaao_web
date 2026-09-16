@@ -1,0 +1,117 @@
+---
+/**
+ * Transitions graphiques entre sections, relevées sur la maquette (base 1920px).
+ * - bands    : bandes obliques orange/saumon, crème → sombre (sous le hero)
+ * - slant    : pente sombre en haut à gauche, sombre → crème
+ * - chevron  : pointe en V, crème → sombre
+ * - zigzag   : dents sombres vers le bas, sombre → crème
+ * - zigzag-up: dents vers le haut, couleur `from` → couleur `to` (page Projets)
+ */
+type Color = 'ink' | 'cream';
+
+interface Props {
+  variant: 'bands' | 'slant' | 'chevron' | 'zigzag' | 'zigzag-up';
+  /** Pour zigzag-up : couleur de la section précédente. */
+  from?: Color;
+  /** Pour zigzag-up : couleur des dents (section suivante). */
+  to?: Color;
+  class?: string;
+}
+
+const { variant, from = 'cream', to = 'ink', class: className } = Astro.props;
+const bg: Record<Color, string> = { ink: 'bg-ink', cream: 'bg-cream' };
+
+const toothMask = {
+  down: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='44'%3E%3Cpath d='M0 0H50L25 44Z'/%3E%3C/svg%3E")`,
+  up: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='44'%3E%3Cpath d='M0 44L25 0L50 44Z'/%3E%3C/svg%3E")`,
+};
+---
+
+{variant === 'bands' && (
+  <div aria-hidden="true" class:list={['-mt-px bg-cream', className]}>
+    <svg
+      class="block h-[clamp(4.5rem,12.5vw,15rem)] w-full"
+      viewBox="0 0 1920 240"
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <filter id="divider-bands-shadow" x="-5%" y="-20%" width="110%" height="160%">
+          <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.18" />
+        </filter>
+      </defs>
+      <polygon points="0,240 1920,160 1920,240" class="fill-ink" />
+      <polygon points="0,142 1920,109 1920,161 0,240" class="fill-salmon" />
+      <polygon
+        points="0,8 1920,57 1920,160 0,112"
+        class="fill-orange"
+        filter="url(#divider-bands-shadow)"
+      />
+    </svg>
+  </div>
+)}
+
+{variant === 'slant' && (
+  <div aria-hidden="true" class:list={['-mt-px bg-cream', className]}>
+    <svg
+      class="block h-[clamp(2.5rem,6.5vw,7.8rem)] w-full overflow-visible"
+      viewBox="0 0 1920 125"
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <filter id="divider-slant-shadow" x="-5%" y="-20%" width="110%" height="160%">
+          <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.25" />
+        </filter>
+      </defs>
+      <polygon points="0,0 960,0 0,125" class="fill-ink" filter="url(#divider-slant-shadow)" />
+    </svg>
+  </div>
+)}
+
+{variant === 'chevron' && (
+  <div aria-hidden="true" class:list={['-mt-px bg-cream', className]}>
+    <svg
+      class="block h-[clamp(2.5rem,6.35vw,7.6rem)] w-full"
+      viewBox="0 0 1920 122"
+      preserveAspectRatio="none"
+    >
+      <polygon points="0,0 960,122 1920,0 1920,123 0,123" class="fill-ink" />
+    </svg>
+  </div>
+)}
+
+{variant === 'zigzag' && (
+  <div aria-hidden="true" class:list={['-mt-px bg-cream', className]}>
+    <div class="drop-shadow-[3px_3px_3px_rgb(0_0_0/0.22)]">
+      <div
+        class="h-11 bg-ink"
+        style={{
+          maskImage: toothMask.down,
+          maskRepeat: 'repeat-x',
+          maskSize: '50px 44px',
+          WebkitMaskImage: toothMask.down,
+          WebkitMaskRepeat: 'repeat-x',
+          WebkitMaskSize: '50px 44px',
+        }}
+      />
+    </div>
+  </div>
+)}
+
+{variant === 'zigzag-up' && (
+  <div aria-hidden="true" class:list={['-mt-px', bg[from], className]}>
+    <div class="drop-shadow-[3px_-3px_3px_rgb(0_0_0/0.18)]">
+      <div
+        class:list={['h-10', bg[to]]}
+        style={{
+          maskImage: toothMask.up,
+          maskRepeat: 'repeat-x',
+          maskSize: '50px 40px',
+          WebkitMaskImage: toothMask.up,
+          WebkitMaskRepeat: 'repeat-x',
+          WebkitMaskSize: '50px 40px',
+        }}
+      />
+      <div class:list={['h-1.5', bg[to]]} />
+    </div>
+  </div>
+)}

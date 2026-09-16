@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+/* Palette et tokens issus des maquettes (CIAAAO_CONTENT/couleur.png + relevés). */
+@theme {
+  --color-cream: #efdec4;
+  --color-orange: #f25922;
+  --color-orange-light: #ffb658;
+  --color-salmon: #ff8559;
+  --color-red: #d60602;
+  --color-ink: #191919;
+  --color-black: #020202;
+  --color-coal: #302c27;
+  --color-muted: #909090;
+
+  /* Largeurs max padding compris (px-8) : contenu de 1400px et 1200px. */
+  --container-site: 91.5rem;
+  --container-footer: 79rem;
+}
+
+/* Les variables --font-* sont injectées par le composant <Font /> d'Astro. */
+@theme inline {
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-bitronik);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink font-sans text-ink antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-orange text-cream;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-4 outline-orange;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+ * Apparition au scroll : `data-reveal` sur un élément, délai optionnel via `--reveal-delay`.
+ * Uniquement si JS est actif (classe .js posée dans le <head>) et sans préférence de mouvement réduit.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(1.5rem);
+    transition:
+      opacity 0.7s ease-out,
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .js [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Pages de texte (mentions légales, confidentialité, CGU/CGV). */
+@layer components {
+  .prose-legal {
+    @apply text-lg leading-relaxed;
+
+    & h2 {
+      @apply mt-12 mb-4 text-2xl leading-snug font-bold first:mt-0;
+    }
+
+    & h3 {
+      @apply mt-8 mb-3 text-xl font-bold;
+    }
+
+    & p,
+    & ul {
+      @apply mb-4;
+    }
+
+    & ul {
+      @apply list-disc space-y-1 pl-6;
+    }
+
+    & a {
+      @apply font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange;
+    }
+
+    & mark {
+      @apply rounded bg-orange-light/60 px-1 text-ink;
+    }
+  }
+}
+
+@utility container-site {
+  @apply mx-auto w-full max-w-site px-5 sm:px-8;
+}
+
+@utility container-footer {
+  @apply mx-auto w-full max-w-footer px-5 sm:px-8;
+}

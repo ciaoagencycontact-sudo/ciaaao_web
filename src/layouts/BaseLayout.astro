@@ -1,0 +1,104 @@
+---
+import '@/styles/global.css';
+import { Font } from 'astro:assets';
+import Footer from '@/components/layout/Footer.astro';
+import Header from '@/components/layout/Header.astro';
+import { site } from '@/config/site';
+
+interface Props {
+  /** Titre de la page (sans le nom du site). */
+  title?: string;
+  description?: string;
+  /** Chemin d'une image Open Graph dans /public. */
+  image?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description = site.description,
+  image = '/og-default.png',
+  noindex = false,
+} = Astro.props;
+
+const pageTitle = title
+  ? `${title} | ${site.name}`
+  : `${site.name} | Des sites qui convertissent et se trouvent`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(image, Astro.site);
+
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: site.name,
+  url: Astro.site?.href,
+  logo: new URL('/favicon.svg', Astro.site).href,
+  sameAs: Object.values(site.socials),
+};
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#f25922" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={site.locale} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <Font cssVariable="--font-dm-sans" preload />
+    <Font cssVariable="--font-bitronik" preload />
+
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(organization)}></script>
+  </head>
+  <body class="flex min-h-dvh flex-col">
+    <a
+      href="#contenu"
+      class="sr-only z-60 rounded-lg bg-cream px-4 py-2 font-semibold text-ink focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+    >
+      Aller au contenu
+    </a>
+    <Header />
+    <main id="contenu" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      const targets = document.querySelectorAll<HTMLElement>('[data-reveal]');
+
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add('is-revealed');
+              observer.unobserve(entry.target);
+            }
+          },
+          { rootMargin: '0px 0px -10% 0px' },
+        );
+        targets.forEach((target) => observer.observe(target));
+      } else {
+        targets.forEach((target) => target.classList.add('is-revealed'));
+      }
+    </script>
+  </body>
+</html>
