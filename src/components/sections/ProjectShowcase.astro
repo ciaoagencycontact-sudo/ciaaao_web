@@ -1,0 +1,56 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Button from '@/components/ui/Button.astro';
+import MediaFrame from '@/components/ui/MediaFrame.astro';
+import Tag from '@/components/ui/Tag.astro';
+import { surface, type Theme } from '@/lib/theme';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  theme: Theme;
+  /** Coins arrondis en haut (panneaux empilés). */
+  rounded?: boolean;
+}
+
+const { project, theme, rounded = false } = Astro.props;
+const { title, tagline, heading, summary, tags, url, image, imageAlt } = project.data;
+---
+
+<article class:list={[surface[theme], rounded && 'rounded-t-2xl']}>
+  <div class:list={['container-site pt-20 pb-20 lg:pb-30', rounded ? 'lg:pt-26' : 'lg:pt-32']}>
+    <header data-reveal class="mx-auto flex max-w-4xl flex-col items-center text-center">
+      <h2 class="font-display text-6xl leading-none wrap-break-word sm:text-7xl lg:text-8xl">
+        {title}
+      </h2>
+      <p class="mt-6 max-w-150 text-lg leading-normal text-pretty lg:text-xl">{tagline}</p>
+    </header>
+
+    <div
+      data-reveal
+      class="mt-14 grid items-center gap-10 lg:mt-24 lg:grid-cols-[1fr_minmax(0,713px)] lg:gap-12"
+    >
+      <div class="flex flex-col items-start">
+        <h3 class="text-[1.75rem] leading-[1.2] lg:text-[2rem]">{heading}</h3>
+        <p class="mt-6 max-w-160 text-lg leading-normal">{summary}</p>
+        <ul class="mt-4 flex flex-wrap gap-x-3.5 gap-y-2" aria-label="Prestations">
+          {tags.map((tag) => (
+            <li>
+              <Tag theme={theme}>{tag}</Tag>
+            </li>
+          ))}
+        </ul>
+        {url && (
+          <Button href={url} external edge={theme === 'light' ? 'ink' : 'cream'} class="mt-10">
+            Voir le site
+          </Button>
+        )}
+      </div>
+      <MediaFrame
+        image={image}
+        alt={imageAlt}
+        aspect="aspect-713/511"
+        sizes="(min-width: 1024px) 713px, 100vw"
+      />
+    </div>
+  </div>
+</article>

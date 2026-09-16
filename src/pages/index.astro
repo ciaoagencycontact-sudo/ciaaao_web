@@ -1,0 +1,21 @@
+---
+import Divider from '@/components/deco/Divider.astro';
+import About from '@/components/sections/About.astro';
+import Benefits from '@/components/sections/Benefits.astro';
+import Hero from '@/components/sections/Hero.astro';
+import Process from '@/components/sections/Process.astro';
+import ServicesSection from '@/components/sections/ServicesSection.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+  <Hero />
+  <Divider variant="bands" />
+  <ServicesSection badge="Services" />
+  <Divider variant="slant" />
+  <Benefits />
+  <Divider variant="chevron" />
+  <Process />
+  <Divider variant="zigzag" />
+  <About />
+</BaseLayout>

@@ -1,0 +1,39 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Button from '@/components/ui/Button.astro';
+import CheckList from '@/components/ui/CheckList.astro';
+import IconCircle from '@/components/ui/IconCircle.astro';
+import MediaFrame from '@/components/ui/MediaFrame.astro';
+import { bookingHref, isExternalBooking } from '@/config/site';
+
+interface Props {
+  service: CollectionEntry<'services'>;
+  /** Visuel à gauche et texte à droite. */
+  reverse?: boolean;
+  headingLevel?: 'h2' | 'h3';
+}
+
+const { service, reverse = false, headingLevel: Heading = 'h3' } = Astro.props;
+const { title, icon, description, solutions, image, imageAlt } = service.data;
+---
+
+<article
+  data-reveal
+  class:list={[
+    'grid items-center gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-20',
+    reverse ? 'xl:grid-cols-[minmax(0,650px)_1fr]' : 'xl:grid-cols-[1fr_minmax(0,650px)]',
+  ]}
+>
+  <div class:list={['flex flex-col items-start', reverse && 'lg:order-2']}>
+    <IconCircle name={icon} />
+    <Heading class="mt-5 text-[1.75rem] leading-[1.2] lg:text-[2rem]">{title}</Heading>
+    <p class="mt-5 max-w-125 text-lg leading-normal">{description}</p>
+    <CheckList items={solutions} class="mt-8 sm:ml-4" />
+    <Button href={bookingHref} external={isExternalBooking} class="mt-8">
+      Réserver un appel
+    </Button>
+  </div>
+  <div class:list={[reverse && 'lg:order-1']}>
+    <MediaFrame image={image} alt={imageAlt} sizes="(min-width: 1024px) 650px, 100vw" />
+  </div>
+</article>

@@ -1,0 +1,90 @@
+---
+import LoopArrow from '@/assets/deco/loop-arrow.svg';
+import PalmUpHand from '@/assets/emoji/palm-up-hand.svg';
+import WoozyFace from '@/assets/emoji/woozy-face.svg';
+import TeamCards from '@/components/sections/TeamCards.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import TextLink from '@/components/ui/TextLink.astro';
+
+interface Props {
+  /** h1 sur la page La team, h2 sur la landing. */
+  level?: 'h1' | 'h2';
+  /** Affiche le lien « En savoir plus » vers la page La team. */
+  showLink?: boolean;
+  class?: string;
+}
+
+const { level = 'h2', showLink = true, class: className = 'pt-12' } = Astro.props;
+
+const stats = [
+  { value: '24 ans', label: "de moyenne d'âge" },
+  { value: '143', label: 'de QI' },
+];
+---
+
+<section class="overflow-x-clip bg-cream text-ink">
+  <div class:list={['container-site pb-24 lg:pb-[123px]', className]}>
+    <div class="relative">
+      <SectionHeading
+        level={level}
+        badge="A propos"
+        title="Qui sommes nous ?"
+        subtitle="Une agence fraîche et pétillante"
+      />
+      <LoopArrow
+        aria-hidden="true"
+        class="pointer-events-none absolute top-[52px] left-[calc(50%+288px)] hidden w-[196px] lg:block h-auto text-orange"
+      />
+    </div>
+
+    <div class="mt-14 grid items-start gap-16 lg:mt-24 xl:grid-cols-[568px_1fr] xl:gap-12">
+      <div data-reveal class="max-w-2xl">
+        <div class="space-y-4 text-lg leading-normal">
+          <p>
+            Une courte section de quelques paragraphes pour présenter qui vous êtes, votre histoire,
+            votre background. L’objectif est de vous établir en tant que figure d’autorité et de
+            créer une connexion avec votre audience.
+          </p>
+          <p>
+            Lorem ipsum dolor sit amet consectetur. Duis magna facilisis ornare est curabitur
+            posuere adipiscing malesuada varius. Non mollis ultrices id arcu in faucibus tincidunt.
+            Non nunc turpis lectus <strong class="font-semibold">facilisis</strong>. Elementum nunc
+            amet nunc tellus aliquet arcu feugiat et feugiat.
+          </p>
+        </div>
+
+        {showLink && (
+          <TextLink href="/la-team" class="mt-9">
+            En savoir plus
+          </TextLink>
+        )}
+
+        <dl class="mt-16 grid max-w-150 grid-cols-3 lg:mt-20">
+          {stats.map((stat) => (
+            <div class="flex flex-col items-center gap-3 border-l-2 border-ink/90 px-2 text-center first:border-l-0">
+              <dt class="order-2 text-sm leading-tight text-muted sm:text-base">{stat.label}</dt>
+              <dd class="text-[1.75rem] leading-none font-bold whitespace-nowrap text-orange sm:text-5xl">
+                {stat.value}
+              </dd>
+            </div>
+          ))}
+          <div class="flex flex-col items-center gap-3 border-l-2 border-ink/90 px-2 text-center">
+            <dt class="order-2 flex h-5 items-center sm:h-6">
+              <span class="sr-only">Bof</span>
+              <PalmUpHand aria-hidden="true" class="size-4 -scale-x-100 sm:size-5" />
+              <WoozyFace aria-hidden="true" class="size-4 sm:size-5" />
+              <PalmUpHand aria-hidden="true" class="size-4 sm:size-5" />
+            </dt>
+            <dd class="text-[1.75rem] leading-none font-bold whitespace-nowrap text-orange sm:text-5xl">
+              6.7.
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div data-reveal style={{ '--reveal-delay': '150ms' }}>
+        <TeamCards />
+      </div>
+    </div>
+  </div>
+</section>

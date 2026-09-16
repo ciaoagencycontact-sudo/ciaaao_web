@@ -1,0 +1,58 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import Dots from '@/assets/deco/dots.svg';
+import Hashtag from '@/assets/deco/hashtag.svg';
+import TeamLine from '@/assets/deco/team-line.svg';
+
+const team = (await getCollection('team')).sort((a, b) => a.data.order - b.data.order);
+
+// Composition relevée sur la maquette dans un cadre de 1040×600px (positions en %).
+const cardPositions = [
+  { left: '5.87%', top: '4.5%' },
+  { left: '28.75%', top: '16.5%' },
+  { left: '51.25%', top: '30%' },
+];
+---
+
+<!-- Mobile : cartes qui se chevauchent, décalées en escalier -->
+<ul class="flex justify-center pb-12 md:hidden">
+  {team.map((member, index) => (
+    <li
+      class="w-[38%] max-w-54 not-first:ml-[-7%]"
+      style={{ transform: `translateY(${index * 24}px) rotate(${(index - 1) * 4}deg)` }}
+    >
+      <Image
+        src={member.data.card}
+        alt={`${member.data.name}, ${member.data.role}`}
+        width={217}
+        class="h-auto w-full"
+      />
+    </li>
+  ))}
+</ul>
+
+<!-- Tablette et desktop : composition de la maquette (déborde à droite sur grand écran) -->
+<div class="relative hidden aspect-1040/600 w-full md:block xl:-mt-10 xl:w-[132.7%]">
+  <TeamLine aria-hidden="true" class="absolute inset-0 h-full w-full text-ink" />
+  <Hashtag
+    aria-hidden="true"
+    class="pointer-events-none absolute top-[64.17%] left-[2.12%] w-[9.71%] h-auto text-orange"
+  />
+  <Dots
+    aria-hidden="true"
+    class="pointer-events-none absolute top-[84.5%] left-[62.02%] w-[12.6%] h-auto text-orange"
+  />
+  <ul>
+    {team.map((member, index) => (
+      <li class="absolute w-[20.87%]" style={cardPositions[index]}>
+        <Image
+          src={member.data.card}
+          alt={`${member.data.name}, ${member.data.role}`}
+          width={217}
+          class="h-auto w-full transition-transform duration-300 ease-out hover:-translate-y-2 hover:-rotate-2"
+        />
+      </li>
+    ))}
+  </ul>
+</div>

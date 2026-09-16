@@ -1,0 +1,72 @@
+---
+import IconCircle from '@/components/ui/IconCircle.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import TextLink from '@/components/ui/TextLink.astro';
+
+const benefits = [
+  {
+    icon: 'mail',
+    title: 'Bénéfice 1',
+    text: 'Give one sentence describing who this is for and what it helps them achieve',
+    href: '/offres',
+  },
+  {
+    icon: 'zap',
+    title: 'Bénéfice 2',
+    text: 'Give one sentence describing who this is for and what it helps them achieve',
+    href: '/offres',
+  },
+  {
+    icon: 'chart',
+    title: 'Bénéfice 3',
+    text: 'Give one sentence describing who this is for and what it helps them achieve',
+    href: '/offres',
+  },
+] as const;
+---
+
+<section class="overflow-x-clip bg-cream text-ink">
+  <div class="container-site pb-20 lg:-mt-3 lg:pb-[94px]">
+    <SectionHeading
+      badge="Notre solution"
+      title="Bénéfices pour vos clients"
+      subtitle="Décrivez les avantages que vos services apportent à vos clients"
+    />
+
+    <div class="relative mt-14 lg:mt-20">
+      <!-- Ligne orange qui serpente derrière les cartes -->
+      <svg
+        aria-hidden="true"
+        class="pointer-events-none absolute top-1/2 left-1/2 hidden h-[300px] w-screen -translate-x-1/2 -translate-y-1/2 md:block"
+        viewBox="0 0 1920 300"
+        preserveAspectRatio="none"
+        fill="none"
+      >
+        <path
+          d="M0 247C140 247 230 190 290 134C420 20 560 220 725 205C860 192 1000 120 1190 135C1400 150 1500 200 1639 176C1760 150 1840 40 1890 30C1905 27 1915 33 1920 38"
+          class="stroke-orange"
+          stroke-width="4"
+          stroke-linecap="round"
+          vector-effect="non-scaling-stroke"
+        />
+      </svg>
+
+      <ul class="relative mx-auto grid max-w-[1352px] gap-6 md:grid-cols-3 lg:gap-[50px]">
+        {benefits.map((benefit, index) => (
+          <li
+            data-reveal
+            style={{ '--reveal-delay': `${index * 120}ms` }}
+            class="flex flex-col items-center rounded-xl bg-coal px-5 pt-5.5 pb-5.25 text-center text-cream"
+          >
+            <IconCircle name={benefit.icon} />
+            <h3 class="mt-7 text-2xl leading-[1.3] font-bold">{benefit.title}</h3>
+            <p class="mt-5 text-lg leading-normal text-balance">{benefit.text}</p>
+            <TextLink href={benefit.href} class="mt-8">
+              En savoir plus
+            </TextLink>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>

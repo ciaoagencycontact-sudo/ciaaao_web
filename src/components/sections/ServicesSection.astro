@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import ServiceRow from '@/components/sections/ServiceRow.astro';
+
+interface Props {
+  /** h1 sur la page Offres, h2 sur la landing. */
+  level?: 'h1' | 'h2';
+  badge?: string;
+  class?: string;
+}
+
+const { level = 'h2', badge, class: className = 'pt-20 pb-24 lg:pb-40' } = Astro.props;
+
+const services = (await getCollection('services')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<section id="offres" class="bg-ink text-cream">
+  <div class:list={['container-site', className]}>
+    <SectionHeading
+      level={level}
+      theme="dark"
+      badge={badge}
+      title="Ce que nous proposons"
+      subtitle="Phrase qui décrit la transformation que peut attendre un client en faisant appel à vos services."
+    />
+    <div class="mt-16 flex flex-col gap-20 lg:mt-24 lg:gap-[100px]">
+      {services.map((service, index) => (
+        <ServiceRow
+          service={service}
+          reverse={index % 2 === 1}
+          headingLevel={level === 'h1' ? 'h2' : 'h3'}
+        />
+      ))}
+    </div>
+  </div>
+</section>

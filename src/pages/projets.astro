@@ -1,0 +1,39 @@
+---
+import { getCollection } from 'astro:content';
+import Divider from '@/components/deco/Divider.astro';
+import ProjectShowcase from '@/components/sections/ProjectShowcase.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import type { Theme } from '@/lib/theme';
+
+const projects = (
+  await getCollection('projects', ({ data }) => import.meta.env.DEV || !data.draft)
+).sort((a, b) => a.data.order - b.data.order);
+
+// Les panneaux alternent clair / sombre.
+const themeAt = (index: number): Theme => (index % 2 === 0 ? 'light' : 'dark');
+const colorOf = (theme: Theme) => (theme === 'light' ? 'cream' : 'ink');
+---
+
+<BaseLayout
+  title="Projets"
+  description="Les sites que nous avons conçus et développés : UI, UX, direction artistique et intégration web."
+>
+  <h1 class="sr-only">Nos projets</h1>
+  <div class="bg-black">
+    {projects.map((project, index) => {
+      const theme = themeAt(index);
+      const isLast = index === projects.length - 1;
+      return (
+        <Fragment>
+          <ProjectShowcase project={project} theme={theme} rounded={index > 0} />
+          {!isLast && (
+            <Fragment>
+              <Divider variant="zigzag-up" from={colorOf(theme)} to={colorOf(themeAt(index + 1))} />
+              <div class="h-16 lg:h-[124px]" />
+            </Fragment>
+          )}
+        </Fragment>
+      );
+    })}
+  </div>
+</BaseLayout>
