@@ -6,6 +6,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initLenis } from './lenis';
 import { prefersReducedMotion } from './media';
+import { initNav } from './modules/nav';
 import { initReveal } from './modules/reveal';
 import { initSketch } from './modules/sketch';
 
@@ -20,6 +21,7 @@ if (!prefersReducedMotion()) {
   initLenis();
   initReveal();
   initSketch();
+  initNav();
 }
 
 // Signale au script du <head> que les animations ont pris la main.
