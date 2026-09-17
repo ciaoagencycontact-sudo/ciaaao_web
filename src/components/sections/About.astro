@@ -1,7 +1,7 @@
 ---
-import LoopArrow from '@/assets/deco/loop-arrow.svg';
 import PalmUpHand from '@/assets/emoji/palm-up-hand.svg';
 import WoozyFace from '@/assets/emoji/woozy-face.svg';
+import Sketch from '@/components/deco/Sketch.astro';
 import TeamCards from '@/components/sections/TeamCards.astro';
 import SectionHeading from '@/components/ui/SectionHeading.astro';
 import TextLink from '@/components/ui/TextLink.astro';
@@ -31,8 +31,8 @@ const stats = [
         title="Qui sommes nous ?"
         subtitle="Une agence fraîche et pétillante"
       />
-      <LoopArrow
-        aria-hidden="true"
+      <Sketch
+        name="loop-arrow"
         class="pointer-events-none absolute top-[52px] left-[calc(50%+288px)] hidden w-[196px] lg:block h-auto text-orange"
       />
     </div>

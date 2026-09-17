@@ -1,9 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
-import Dots from '@/assets/deco/dots.svg';
-import Hashtag from '@/assets/deco/hashtag.svg';
-import TeamLine from '@/assets/deco/team-line.svg';
+import Sketch from '@/components/deco/Sketch.astro';
 
 const team = (await getCollection('team')).sort((a, b) => a.data.order - b.data.order);
 
@@ -32,15 +30,21 @@ const cardPositions = [
   ))}
 </ul>
 
-<!-- Tablette et desktop : composition de la maquette (déborde à droite sur grand écran) -->
-<div class="relative hidden aspect-1040/600 w-full md:block xl:-mt-10 xl:w-[132.7%]">
-  <TeamLine aria-hidden="true" class="absolute inset-0 h-full w-full text-ink" />
-  <Hashtag
-    aria-hidden="true"
+<!-- Tablette et desktop : composition de la maquette (déborde à droite sur grand écran). -->
+<!-- Décorations dessinées à la main : le fil qui relie les cartes, puis le hashtag et les points. -->
+<div
+  class="relative hidden aspect-1040/600 w-full md:block xl:-mt-10 xl:w-[132.7%]"
+  data-sketch-scene
+>
+  <Sketch name="team-line" order={1} class="absolute inset-0 h-full w-full text-ink" />
+  <Sketch
+    name="hashtag"
+    order={2}
     class="pointer-events-none absolute top-[64.17%] left-[2.12%] w-[9.71%] h-auto text-orange"
   />
-  <Dots
-    aria-hidden="true"
+  <Sketch
+    name="dots"
+    order={3}
     class="pointer-events-none absolute top-[84.5%] left-[62.02%] w-[12.6%] h-auto text-orange"
   />
   <ul>

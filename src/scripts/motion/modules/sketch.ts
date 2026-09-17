@@ -64,7 +64,8 @@ export function initSketch() {
           { strokeDasharray: `0 ${gap}` },
           {
             strokeDasharray: `${length} ${gap}`,
-            duration: gsap.utils.clamp(0.1, 0.5, length / PEN_SPEED),
+            // Plafond haut pour les longs traits (ex. le fil de la team) : la main ralentit sans traîner.
+            duration: gsap.utils.clamp(0.1, 2, length / PEN_SPEED),
             ease: 'sine.inOut',
           },
           '<',

@@ -8,12 +8,23 @@
  * comme par une seule main, dans l'ordre de leur prop `order`.
  */
 import dotArrow from '@/assets/deco/dot-arrow.svg?raw';
+import dots from '@/assets/deco/dots.svg?raw';
 import exclamation from '@/assets/deco/exclamation.svg?raw';
 import hashtag from '@/assets/deco/hashtag.svg?raw';
+import loopArrow from '@/assets/deco/loop-arrow.svg?raw';
 import smile from '@/assets/deco/smile.svg?raw';
+import teamLine from '@/assets/deco/team-line.svg?raw';
 import sketches from './sketches.json';
 
-const sources = { 'dot-arrow': dotArrow, exclamation, hashtag, smile };
+const sources = {
+  'dot-arrow': dotArrow,
+  dots,
+  exclamation,
+  hashtag,
+  'loop-arrow': loopArrow,
+  smile,
+  'team-line': teamLine,
+};
 
 interface Props {
   name: keyof typeof sketches;
