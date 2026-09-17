@@ -68,6 +68,42 @@
   opacity: 0;
 }
 
+/*
+ * Griffonnages du header (components/deco/Scribble.astro).
+ * Sans animation : affichage direct en CSS (survol, focus, page active, menu ouvert).
+ */
+[data-scribble='circle'],
+[data-scribble='steam'],
+[data-scribble='close'] {
+  opacity: 0;
+}
+
+[data-nav-link]:hover > [data-scribble='circle'],
+[data-nav-link]:focus-visible > [data-scribble='circle'],
+[data-scribble][data-drawn],
+[data-coffee]:hover [data-scribble='steam'],
+[aria-expanded='true'] [data-scribble='close'] {
+  opacity: 1;
+}
+
+[aria-expanded='true'] [data-scribble='burger'] {
+  opacity: 0;
+}
+
+/* Avec animations : les SVG restent affichés, GSAP gère chaque trait (modules/nav.ts, scripts/menu.ts). */
+.motion [data-scribble] {
+  opacity: 1 !important;
+}
+
+.motion [data-scribble]:not([data-scribble='burger']) [data-scribble-path] {
+  opacity: 0;
+}
+
+/* Intro du logo (une fois par session) : barres masquées jusqu'à leur arrivée. */
+.logo-intro header [data-logo-mark] {
+  visibility: hidden;
+}
+
 /* Pages de texte (mentions légales, confidentialité, CGU/CGV). */
 @layer components {
   .prose-legal {

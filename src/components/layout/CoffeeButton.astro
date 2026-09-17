@@ -1,0 +1,35 @@
+---
+/**
+ * CTA « Un petit café ? » : penche comme un sticker au survol, et une vapeur griffonnée
+ * s'en échappe (tracée par scripts/motion/modules/nav.ts).
+ */
+import Scribble from '@/components/deco/Scribble.astro';
+import Button from '@/components/ui/Button.astro';
+import { bookingHref, isExternalBooking } from '@/config/site';
+
+interface Props {
+  /** `cta` : bouton crème (header orange) ; `primary` : pilule orange à bord encre (fond crème). */
+  variant?: 'cta' | 'primary';
+  /** Couleur de la vapeur, selon le fond (crème sur le header orange, orange sur fond crème). */
+  steamClass?: string;
+  class?: string;
+}
+
+const { variant = 'cta', steamClass = 'text-cream', class: className } = Astro.props;
+---
+
+<span
+  class:list={[
+    'relative inline-block transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-rotate-3 has-focus-visible:-rotate-3',
+    className,
+  ]}
+  data-coffee
+>
+  <Scribble
+    variant="steam"
+    class:list={['pointer-events-none absolute -top-5 left-[58%] h-auto w-7', steamClass]}
+  />
+  <Button variant={variant} edge="ink" href={bookingHref} external={isExternalBooking}>
+    Un petit café ?
+  </Button>
+</span>

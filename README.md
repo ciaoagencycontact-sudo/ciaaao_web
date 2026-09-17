@@ -67,7 +67,13 @@ GSAP (ScrollTrigger, et SplitText / DrawSVG disponibles) et Lenis pour le scroll
 - `index.ts` : point d'entrée chargé par `BaseLayout`, qui lance Lenis et les modules ;
 - `lenis.ts` : scroll fluide synchronisé avec ScrollTrigger, ancres décalées sous le header ;
 - `media.ts` : breakpoints et `gsap.matchMedia()` partagé (desktop / mobile / mouvement réduit) ;
-- `modules/` : une animation = un module (ex. `reveal.ts`).
+- `draw.ts` : tracé d'un trait SVG (`drawPath` / `erasePath`), partagé par toutes les animations dessinées ;
+- `modules/` : une animation = un module (`reveal.ts`, `sketch.ts` pour les décorations, `nav.ts` pour le header).
+
+Le header est « dessiné à la main » : cercle au feutre autour des liens (survol, focus clavier, page
+active), vapeur du café, intro du logo une fois par session, et menu mobile plein écran
+(`src/scripts/menu.ts`, qui fonctionne aussi sans animations). Les griffonnages réutilisables sont
+dans `src/components/deco/Scribble.astro` et `scribbles.json`.
 
 Règles :
 

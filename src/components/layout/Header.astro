@@ -1,8 +1,9 @@
 ---
-import Button from '@/components/ui/Button.astro';
-import Icon from '@/components/ui/Icon.astro';
+import CoffeeButton from '@/components/layout/CoffeeButton.astro';
+import Scribble from '@/components/deco/Scribble.astro';
+import Sketch from '@/components/deco/Sketch.astro';
 import Logo from '@/components/ui/Logo.astro';
-import { bookingHref, isExternalBooking, site } from '@/config/site';
+import { site } from '@/config/site';
 
 const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -10,27 +11,34 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
 
 <header class="sticky top-0 z-50 bg-orange text-cream">
   <div class="container-site flex h-18 items-center justify-between gap-6 lg:h-[85px]">
-    <a href="/" class="rounded-sm" aria-label={`${site.name}, accueil`}>
+    <a href="/" class="rounded-sm" aria-label={`${site.name}, accueil`} data-logo-link>
       <Logo class="[--logo-h:36px] lg:[--logo-h:40px]" />
     </a>
 
     <nav aria-label="Navigation principale" class="hidden items-center gap-12 lg:flex">
       <ul class="flex items-center gap-12">
-        {site.mainNav.map((link) => (
+        {site.mainNav.map((link, index) => (
           <li>
             <a
               href={link.href}
               aria-current={isCurrent(link.href) ? 'page' : undefined}
-              class="text-xl font-semibold decoration-2 underline-offset-8 transition-colors hover:text-ink aria-[current=page]:underline"
+              class="relative inline-block text-xl font-semibold focus-visible:outline-none"
+              data-nav-link
             >
               {link.label}
+              <!-- Cercle au feutre : survol, focus clavier et page active -->
+              <Scribble
+                variant="circle"
+                index={index}
+                ratio={2}
+                drawn={isCurrent(link.href)}
+                class="pointer-events-none absolute -top-2.5 -left-4 h-[calc(100%+1.25rem)] w-[calc(100%+2rem)] text-ink"
+              />
             </a>
           </li>
         ))}
       </ul>
-      <Button variant="cta" href={bookingHref} external={isExternalBooking}>
-        Un petit café ?
-      </Button>
+      <CoffeeButton />
     </nav>
 
     <button
@@ -43,66 +51,56 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
       <span class="sr-only" data-menu-label>
         Ouvrir le menu
       </span>
-      <Icon name="menu" size={28} data-menu-icon="open" />
-      <Icon name="close" size={28} class="hidden" data-menu-icon="close" />
+      <span class="relative size-7">
+        <Scribble variant="burger" class="absolute inset-0 size-7" />
+        <Scribble variant="close" class="absolute inset-0 size-7" />
+      </span>
     </button>
   </div>
 
-  <div id="mobile-menu" class="hidden border-t border-cream/25 lg:hidden" data-menu>
+  <!-- Menu mobile : panneau plein écran sous la barre -->
+  <div
+    id="mobile-menu"
+    class="fixed inset-x-0 top-18 bottom-0 overflow-y-auto bg-cream text-ink lg:hidden"
+    hidden
+    data-menu
+  >
     <nav
       aria-label="Navigation mobile"
-      class="container-site flex flex-col items-start gap-6 pt-4 pb-8"
+      class="container-site relative flex min-h-full flex-col pt-12 pb-10"
     >
-      <ul class="flex w-full flex-col">
-        {site.mainNav.map((link) => (
-          <li>
+      <Sketch
+        name="dot-arrow"
+        class="pointer-events-none absolute top-8 right-5 h-auto w-24 text-orange"
+      />
+      <ul class="flex flex-col items-start gap-4">
+        {site.mainNav.map((link, index) => (
+          <li data-menu-item>
             <a
               href={link.href}
               aria-current={isCurrent(link.href) ? 'page' : undefined}
-              class="block py-3 text-2xl font-semibold aria-[current=page]:underline"
+              class="relative inline-block px-1 py-2 font-display text-6xl leading-none focus-visible:outline-none"
+              data-nav-link
             >
               {link.label}
+              <Scribble
+                variant="circle"
+                index={index}
+                ratio={3.2}
+                drawn={isCurrent(link.href)}
+                class="pointer-events-none absolute -top-2 -left-5 h-[calc(100%+1rem)] w-[calc(100%+2.5rem)] text-orange"
+              />
             </a>
           </li>
         ))}
       </ul>
-      <Button variant="cta" href={bookingHref} external={isExternalBooking}>
-        Un petit café ?
-      </Button>
+      <div class="mt-auto pt-12" data-menu-item>
+        <CoffeeButton variant="primary" steamClass="text-orange" />
+      </div>
     </nav>
   </div>
 </header>
 
 <script>
-  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
-  const menu = document.querySelector<HTMLElement>('[data-menu]');
-
-  if (toggle && menu) {
-    const label = toggle.querySelector('[data-menu-label]');
-    const iconOpen = toggle.querySelector('[data-menu-icon="open"]');
-    const iconClose = toggle.querySelector('[data-menu-icon="close"]');
-
-    const setOpen = (open: boolean) => {
-      toggle.setAttribute('aria-expanded', String(open));
-      menu.classList.toggle('hidden', !open);
-      iconOpen?.classList.toggle('hidden', open);
-      iconClose?.classList.toggle('hidden', !open);
-      if (label) label.textContent = open ? 'Fermer le menu' : 'Ouvrir le menu';
-    };
-
-    toggle.addEventListener('click', () => {
-      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
-        setOpen(false);
-        toggle.focus();
-      }
-    });
-
-    window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
-      if (event.matches) setOpen(false);
-    });
-  }
+  import '@/scripts/menu';
 </script>

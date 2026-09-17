@@ -48,8 +48,13 @@ const organization = {
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         const root = document.documentElement;
         root.classList.add('motion');
+        try {
+          if (!sessionStorage.getItem('ciaaao:logo-intro')) root.classList.add('logo-intro');
+        } catch {
+          /* stockage indisponible : pas d'intro du logo */
+        }
         setTimeout(() => {
-          if (!('motionReady' in root.dataset)) root.classList.remove('motion');
+          if (!('motionReady' in root.dataset)) root.classList.remove('motion', 'logo-intro');
         }, 4000);
       }
     </script>

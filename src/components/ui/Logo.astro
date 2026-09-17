@@ -25,6 +25,7 @@ const { height, markClass, wordmarkClass, class: className } = Astro.props;
 >
   <LogoMark
     aria-hidden="true"
+    data-logo-mark
     class:list={['h-[calc(var(--logo-h,40px)*0.8286)] w-auto', markClass]}
   />
   <LogoWordmark aria-hidden="true" class:list={['h-(--logo-h,40px) w-auto', wordmarkClass]} />
