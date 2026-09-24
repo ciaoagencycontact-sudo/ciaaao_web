@@ -99,6 +99,12 @@
   opacity: 0;
 }
 
+/* Page qui arrive par une transition : couverte avant le premier rendu (voir modules/transition.ts). */
+.page-cover [data-page-cover] {
+  visibility: visible;
+  background: var(--color-orange);
+}
+
 /* Intro du logo (une fois par session) : barres masquées jusqu'à leur arrivée. */
 .logo-intro header [data-logo-mark] {
   visibility: hidden;

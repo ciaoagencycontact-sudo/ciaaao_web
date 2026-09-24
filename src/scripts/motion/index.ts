@@ -9,6 +9,7 @@ import { prefersReducedMotion } from './media';
 import { initNav } from './modules/nav';
 import { initReveal } from './modules/reveal';
 import { initSketch } from './modules/sketch';
+import { initPageTransition } from './modules/transition';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -19,9 +20,12 @@ const root = document.documentElement;
 
 if (!prefersReducedMotion()) {
   initLenis();
-  initReveal();
-  initSketch();
   initNav();
+  // Page arrivée couverte : le contenu s'anime une fois découvert.
+  initPageTransition().then(() => {
+    initReveal();
+    initSketch();
+  });
 }
 
 // Signale au script du <head> que les animations ont pris la main.

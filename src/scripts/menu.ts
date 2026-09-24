@@ -6,6 +6,7 @@
 import { gsap } from 'gsap';
 import { drawPath, erasePath, hidePath, setPathProgress } from './motion/draw';
 import { isPlainNavigation } from './motion/handoff';
+import { leavePage } from './motion/modules/transition';
 import { getLenis } from './motion/lenis';
 import { drawSketch } from './motion/modules/sketch';
 
@@ -121,10 +122,10 @@ if (toggle && panel) {
     );
     if (!circle || !withMotion() || link.getAttribute('aria-current') === 'page') return;
     if (!isPlainNavigation(event, link)) return;
+    // Le cercle se dessine au tap, pendant que l'écran se colorie par-dessus le menu.
     event.preventDefault();
-    drawPath(circle, { speed: 650, max: 0.35 }).eventCallback('onComplete', () =>
-      location.assign(link.href),
-    );
+    drawPath(circle, { speed: 650, max: 0.35 });
+    gsap.delayedCall(0.15, () => leavePage(link));
   });
 
   // Page restaurée du cache (précédent / suivant) : le menu est refermé, sans animation.
