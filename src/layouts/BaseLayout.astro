@@ -63,7 +63,6 @@ const organization = {
           const type = performance.getEntriesByType('navigation')[0]?.type;
           if (cover && cover.to === here && type === 'navigate' && Date.now() - cover.at < 5000) {
             root.classList.add('page-cover');
-            root.dataset.coverVariant = cover.variant;
             root.dataset.coverDirection = cover.direction;
           }
         } catch {
@@ -99,6 +98,20 @@ const organization = {
     <script is:inline type="application/ld+json" set:html={JSON.stringify(organization)}></script>
   </head>
   <body class="flex min-h-dvh flex-col">
+    <!--
+      Transition entre les pages : calque colorié au feutre, sous le header.
+      En tête du <body> : la page s'affiche au fur et à mesure qu'elle arrive, le calque doit
+      être là dès les premiers éléments (sinon le fond sombre apparaît un instant).
+    -->
+    <div
+      class="pointer-events-none invisible fixed inset-x-0 top-18 bottom-0 z-55 text-orange lg:top-[85px]"
+      aria-hidden="true"
+      data-page-cover
+    >
+      <svg class="size-full" fill="none" preserveAspectRatio="none">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </div>
     <a
       href="#contenu"
       class="sr-only z-60 rounded-lg bg-cream px-4 py-2 font-semibold text-ink focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
@@ -110,17 +123,6 @@ const organization = {
       <slot />
     </main>
     <Footer />
-
-    <!-- Transition entre les pages : calque colorié au feutre, sous le header -->
-    <div
-      class="pointer-events-none invisible fixed inset-x-0 top-18 bottom-0 z-55 text-orange lg:top-[85px]"
-      aria-hidden="true"
-      data-page-cover
-    >
-      <svg class="size-full" fill="none" preserveAspectRatio="none">
-        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-      </svg>
-    </div>
 
     <script>
       import '@/scripts/motion/index';

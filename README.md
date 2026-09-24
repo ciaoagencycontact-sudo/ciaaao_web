@@ -86,12 +86,10 @@ script inline de `Header.astro`) :
   (et se termine s'il l'était à moitié) ;
 - menu mobile : le cercle se dessine au tap, puis la page change.
 
-Transition entre les pages (`modules/transition.ts`) : au clic sur un lien interne, un calque
-orange colorie l'écran sous le header, la page change, puis la nouvelle page (couverte dès le
-premier rendu) se découvre. Deux variantes, réglées par `pageTransition` dans `site.ts` :
-`scribble` (coup de feutre en zigzag, dans le sens de l'onglet visé) et `circle` (spirale partie
-du lien cliqué, qui se rétracte vers le lien de la page active). Pour comparer sans rebuild :
-ajouter `?transition=circle` ou `?transition=scribble` à l'URL (choix retenu dans le navigateur).
+Transition entre les pages (`modules/transition.ts`) : au clic sur un lien interne, un coup de
+feutre orange colorie l'écran sous le header, dans le sens de l'onglet visé (de haut en bas pour
+les autres liens), la page change, puis la nouvelle page, couverte dès le premier rendu, se
+découvre dans le même sens.
 
 Règles :
 

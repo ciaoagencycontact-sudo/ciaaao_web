@@ -105,6 +105,12 @@
   background: var(--color-orange);
 }
 
+/* Avant même que le <body> soit lu, le fond de la fenêtre est déjà orange. */
+.page-cover,
+.page-cover body {
+  background: var(--color-orange);
+}
+
 /* Intro du logo (une fois par session) : barres masquées jusqu'à leur arrivée. */
 .logo-intro header [data-logo-mark] {
   visibility: hidden;

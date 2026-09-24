@@ -1,5 +1,3 @@
-export type PageTransition = 'scribble' | 'circle';
-
 export interface NavLink {
   label: string;
   href: string;
@@ -13,15 +11,6 @@ export const site = {
 
   // Lien de prise de rendez-vous (Cal.com / Calendly). Tant qu'il est vide, les CTA mènent à /contact.
   bookingUrl: '',
-
-  /**
-   * Transition entre les pages (scripts/motion/modules/transition.ts) :
-   * - 'scribble' : un coup de feutre colorie l'écran dans le sens du lien, puis s'efface ;
-   * - 'circle' : une spirale part du lien cliqué, envahit l'écran, puis se rétracte.
-   * Pour comparer sans rebuild : ajouter ?transition=circle (ou scribble) à l'URL, le choix est
-   * retenu dans le navigateur (à retirer une fois la variante choisie).
-   */
-  pageTransition: 'scribble' as PageTransition,
 
   // Endpoint du formulaire de contact (ex. https://formspree.io/f/xxxxxxx).
   contactFormEndpoint: import.meta.env.PUBLIC_CONTACT_FORM_ENDPOINT ?? '',
