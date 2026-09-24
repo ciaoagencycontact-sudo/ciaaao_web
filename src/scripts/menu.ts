@@ -6,6 +6,7 @@
 import { gsap } from 'gsap';
 import { drawPath, erasePath, hidePath, setPathProgress } from './motion/draw';
 import { getLenis } from './motion/lenis';
+import { drawMark, hideMarks } from './motion/marks';
 import { drawSketch } from './motion/modules/sketch';
 
 const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
@@ -22,10 +23,7 @@ if (toggle && panel) {
   const items = gsap.utils.toArray<HTMLElement>(panel.querySelectorAll('[data-menu-item]'));
   const sketch = panel.querySelector<SVGSVGElement>('[data-anim="sketch"]');
   // Requêtes à chaque ouverture : le contenu et la page active changent sous le header conservé.
-  const currentCircle = () =>
-    panel.querySelector<SVGPathElement>(
-      '[aria-current="page"] [data-scribble="circle"] [data-scribble-path]',
-    );
+  const currentLink = () => panel.querySelector<HTMLElement>('[aria-current="page"]');
   const background = () => [document.getElementById('contenu'), document.querySelector('footer')];
 
   const withMotion = () => document.documentElement.classList.contains('motion');
@@ -72,10 +70,10 @@ if (toggle && panel) {
             0.08,
           );
         if (sketch) timeline.add(drawSketch(sketch), 0.45);
-        const circle = currentCircle();
-        if (circle) {
-          circle.style.opacity = '0';
-          timeline.add(drawPath(circle, { speed: 650 }), 0.55);
+        const link = currentLink();
+        if (link) {
+          hideMarks(link);
+          timeline.add(drawMark(link), 0.55);
         }
       }
 

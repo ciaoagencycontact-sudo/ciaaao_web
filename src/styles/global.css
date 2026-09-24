@@ -90,6 +90,11 @@
   opacity: 0;
 }
 
+/* Sans animation, les liens de navigation n'ont qu'une marque : le cercle. */
+:root:not(.motion) [data-scribble='circle'] [data-mark]:not([data-mark='circle']) {
+  display: none;
+}
+
 /* Avec animations : les SVG restent affichés, GSAP gère chaque trait (modules/nav.ts, scripts/menu.ts). */
 .motion [data-scribble] {
   opacity: 1 !important;
@@ -100,7 +105,7 @@
 }
 
 /* Rechargement : cercle de la page active affiché dès le premier rendu (voir modules/nav.ts). */
-.motion.nav-static [aria-current='page'] > [data-scribble='circle'] [data-scribble-path] {
+.motion.nav-static [aria-current='page'] > [data-scribble='circle'] [data-mark='circle'] path {
   opacity: 1;
 }
 

@@ -1,115 +1,84 @@
 import { gsap } from 'gsap';
-import { drawPath, erasePath, hidePath, pathProgress, setPathProgress } from '../draw';
+import { drawPath, erasePath, hidePath } from '../draw';
+import { drawMark, eraseMark, hideMarks, markProgress, showMark } from '../marks';
 import { matchesPath, normalizePath } from '../route';
 
-const CIRCLE_SPEED = 650;
 const ERASE_SPEED = 1400;
-/** Effacement du cercle de la page quittée : plus posé qu'au simple survol. */
+/** Effacement de la marque de la page quittée : plus posé qu'au simple survol. */
 const HANDOFF_ERASE_SPEED = 900;
-/** Le nouveau cercle commence quand l'ancien est effacé à 60 % (chevauchement). */
+/** La nouvelle marque commence quand l'ancienne est effacée à 60 % (chevauchement). */
 const HANDOFF_OVERLAP = 0.6;
 /** Délai de l'intro quand le logo ne joue pas la sienne. */
 const INTRO_DELAY = 0.5;
 
-interface Circle {
-  link: HTMLAnchorElement;
-  path: SVGPathElement;
-  href: string;
-  tween?: gsap.core.Tween;
-}
-
-const play = (circle: Circle, tween?: gsap.core.Tween) => {
-  circle.tween?.kill();
-  circle.tween = tween;
-};
-
-const isCurrent = (circle: Circle) => circle.link.getAttribute('aria-current') === 'page';
-const isVisible = (circle: Circle) => circle.link.getBoundingClientRect().width > 0;
+const isCurrent = (link: Element) => link.getAttribute('aria-current') === 'page';
+const isVisible = (link: Element) => link.getBoundingClientRect().width > 0;
 
 /**
- * Premier affichage (chargement complet de la page) : le cercle de la page active se dessine
- * après l'intro du logo, ou est déjà là si la page est rechargée.
+ * Premier affichage (chargement complet de la page) : la marque de la page active se dessine
+ * après l'intro du logo ; au rechargement, le cercle est déjà là (posé en CSS avant le rendu).
  */
-function playIntro(circles: Circle[], introEnd: number) {
+function playIntro(links: HTMLAnchorElement[], introEnd: number) {
   const reload = document.documentElement.classList.contains('nav-static');
   document.documentElement.classList.remove('nav-static');
 
-  circles.forEach((circle) => {
-    if (!isCurrent(circle)) return hidePath(circle.path);
-    // Menu mobile fermé : son cercle se dessine à l'ouverture (scripts/menu.ts).
-    if (!isVisible(circle)) return;
-    if (reload) setPathProgress(circle.path, 1);
+  links.forEach((link) => {
+    // Menu mobile fermé : sa marque se dessine à l'ouverture (scripts/menu.ts).
+    if (!isCurrent(link) || !isVisible(link)) return hideMarks(link);
+    if (reload) showMark(link, 'circle');
     else {
-      hidePath(circle.path);
-      play(circle, drawPath(circle.path, { speed: CIRCLE_SPEED }).delay(introEnd || INTRO_DELAY));
+      hideMarks(link);
+      drawMark(link, { delay: introEnd || INTRO_DELAY });
     }
   });
 }
 
 /**
- * Changement de page (le header reste en place) : le cercle de la page quittée s'efface, puis
- * celui de la nouvelle page se dessine en chevauchement. S'il était déjà tracé au survol, il
- * reste, et se termine s'il l'était à moitié.
+ * Changement de page (le header reste en place) : la marque de la page quittée s'efface, puis
+ * celle de la nouvelle page se dessine en chevauchement. Si elle était déjà tracée au survol,
+ * elle reste, et se termine si elle l'était à moitié.
  */
-function moveCurrent(circles: Circle[], to: string) {
+function moveCurrent(links: HTMLAnchorElement[], to: string) {
   let drawAt = 0;
 
-  circles.forEach((circle) => {
-    const next = matchesPath(to, circle.href);
-    if (!isCurrent(circle) || next) return;
-    circle.link.removeAttribute('aria-current');
-    if (isVisible(circle)) {
-      const erase = erasePath(circle.path, { speed: HANDOFF_ERASE_SPEED });
-      play(circle, erase);
-      drawAt = erase.duration() * HANDOFF_OVERLAP;
-    } else {
-      play(circle);
-      hidePath(circle.path);
-    }
+  links.forEach((link) => {
+    if (!isCurrent(link) || matchesPath(to, link.getAttribute('href') ?? '')) return;
+    link.removeAttribute('aria-current');
+    if (isVisible(link))
+      drawAt = eraseMark(link, { speed: HANDOFF_ERASE_SPEED }).duration() * HANDOFF_OVERLAP;
+    else hideMarks(link);
   });
 
-  circles.forEach((circle) => {
-    if (!matchesPath(to, circle.href) || isCurrent(circle)) return;
-    circle.link.setAttribute('aria-current', 'page');
-    if (!isVisible(circle)) return;
-    const drawn = pathProgress(circle.path) > 0;
-    play(circle, drawPath(circle.path, { speed: CIRCLE_SPEED }).delay(drawn ? 0 : drawAt));
+  links.forEach((link) => {
+    if (isCurrent(link) || !matchesPath(to, link.getAttribute('href') ?? '')) return;
+    link.setAttribute('aria-current', 'page');
+    if (isVisible(link)) drawMark(link, { delay: markProgress(link) > 0 ? 0 : drawAt });
   });
 }
 
-/** Liens entourés au feutre : tracé au survol / focus clavier, effacé en sens inverse ; page active toujours entourée. */
-function initNavCircles(introEnd: number) {
-  const circles: Circle[] = [];
+/** Liens marqués au feutre : tracé au survol / focus clavier, effacé en sens inverse ; page active toujours marquée. */
+function initNavMarks(introEnd: number) {
+  const links = gsap.utils.toArray<HTMLAnchorElement>('[data-nav-link]');
 
-  document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]').forEach((link) => {
-    const path = link.querySelector<SVGPathElement>(
-      '[data-scribble="circle"] [data-scribble-path]',
-    );
-    if (!path) return;
-    const circle: Circle = { link, path, href: link.getAttribute('href') ?? '' };
-    circles.push(circle);
-
-    const show = () => {
-      if (!isCurrent(circle))
-        play(circle, drawPath(path, { speed: CIRCLE_SPEED, ease: 'power1.inOut' }));
-    };
+  links.forEach((link) => {
+    const show = () => !isCurrent(link) && drawMark(link, { ease: 'power1.inOut' });
     const hide = () => {
-      if (isCurrent(circle) || link.matches(':hover') || link.matches(':focus-visible')) return;
-      play(circle, erasePath(path, { speed: ERASE_SPEED }));
+      if (isCurrent(link) || link.matches(':hover') || link.matches(':focus-visible')) return;
+      eraseMark(link, { speed: ERASE_SPEED });
     };
 
-    // Au doigt, pas de survol : le cercle se dessine au changement de page.
+    // Au doigt, pas de survol : la marque se dessine au changement de page.
     link.addEventListener('pointerenter', (event) => event.pointerType !== 'touch' && show());
     link.addEventListener('pointerleave', (event) => event.pointerType !== 'touch' && hide());
     link.addEventListener('focus', () => link.matches(':focus-visible') && show());
     link.addEventListener('blur', hide);
   });
 
-  playIntro(circles, introEnd);
+  playIntro(links, introEnd);
 
-  // Header conservé d'une page à l'autre (transition:persist) : les cercles suivent la navigation.
+  // Header conservé d'une page à l'autre (transition:persist) : les marques suivent la navigation.
   document.addEventListener('astro:before-preparation', (event) => {
-    moveCurrent(circles, normalizePath(event.to.pathname));
+    moveCurrent(links, normalizePath(event.to.pathname));
   });
 }
 
@@ -219,6 +188,6 @@ function initLogo() {
 }
 
 export function initNav() {
-  initNavCircles(initLogo());
+  initNavMarks(initLogo());
   initCoffeeSteam();
 }
