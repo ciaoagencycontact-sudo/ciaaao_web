@@ -15,12 +15,10 @@ interface Props {
    * Le tracé est étiré en conséquence pour garder un trait d'épaisseur régulière.
    */
   ratio?: number;
-  /** Déjà dessiné (ex. lien de la page active). */
-  drawn?: boolean;
   class?: string;
 }
 
-const { variant, index = 0, ratio = 2, drawn = false, class: className } = Astro.props;
+const { variant, index = 0, ratio = 2, class: className } = Astro.props;
 
 const { viewBox, width, variants } = scribbles[variant];
 const paths = variants[index % variants.length];
@@ -44,7 +42,6 @@ const [vw, vh] = viewBox;
   aria-hidden="true"
   class={className}
   data-scribble={variant}
-  data-drawn={drawn ? '' : undefined}
 >
   {paths.map((d) => (
     <path

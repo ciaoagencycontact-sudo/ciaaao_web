@@ -1,38 +1,27 @@
 import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { site } from '@/config/site';
-import { isPlainNavigation, matchesPath, normalizePath } from '../handoff';
+import { getLenis } from '../lenis';
+import { matchesPath, normalizePath } from '../route';
 
 /**
  * Transition entre les pages, dessinée au feutre sous le header.
  *
- * Le site recharge la page à chaque clic : au départ, le calque [data-page-cover] recouvre le
- * contenu, puis on change de page. La page suivante démarre couverte (classe .page-cover posée par
- * le script du <head> de BaseLayout, avant le premier rendu) et se découvre.
- * Seuls les clics simples vers une autre page du site sont concernés : pas les nouveaux onglets,
- * les ancres, précédent / suivant ni les arrivées directes.
+ * Le routeur client d'Astro (<ClientRouter /> dans BaseLayout) ne recharge pas la page : il
+ * télécharge la suivante et remplace le contenu, en gardant le header et le calque
+ * [data-page-cover] (transition:persist). Pendant le téléchargement, un coup de feutre colorie
+ * l'écran dans le sens de l'onglet visé ; le contenu change sous le calque, puis le coloriage
+ * s'efface dans le même sens.
  */
 
-/** Clé sessionStorage, reprise telle quelle dans le script du <head> de BaseLayout. */
-const COVER_KEY = 'ciaaao:page-cover';
-
 type Direction = 'right' | 'left' | 'down';
-
-interface Cover {
-  to: string;
-  direction: Direction;
-  at: number;
-}
 
 const COVER_DURATION = 0.45;
 const REVEAL_DURATION = 0.5;
 
-const root = document.documentElement;
 const layer = document.querySelector<HTMLElement>('[data-page-cover]');
 const svg = layer?.querySelector<SVGSVGElement>('svg');
 const path = svg?.querySelector<SVGPathElement>('path');
-
-let leaving = false;
-let tween: gsap.core.Tween | undefined;
 
 /** Épaisseur du feutre : assez large pour couvrir l'écran en quelques allers-retours. */
 const penWidth = (width: number, height: number) =>
@@ -68,118 +57,110 @@ function scribblePath(width: number, height: number, direction: Direction) {
   return { d, pen };
 }
 
-/** Prépare le tracé du calque (dimensions de l'écran) et renvoie sa longueur. */
-function prepare(direction: Direction) {
-  if (!layer || !svg || !path) return 0;
-  const { width, height } = layer.getBoundingClientRect();
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+/** Sens du coloriage : vers l'onglet visé dans le menu, sinon de haut en bas. */
+function directionBetween(from: string, to: string): Direction {
+  const nav = site.mainNav.map((link) => link.href);
+  const start = nav.findIndex((link) => matchesPath(from, link));
+  const end = nav.findIndex((link) => matchesPath(to, link));
+  if (start === -1 || end === -1 || start === end) return 'down';
+  return end > start ? 'right' : 'left';
+}
 
+let tween: gsap.core.Tween | undefined;
+let covering: Promise<void> | undefined;
+let covered: { length: number; pen: number } | undefined;
+
+/** Colorie l'écran ; si un coloriage est déjà en cours (clic pendant une transition), on l'attend. */
+function cover(direction: Direction) {
+  if (covering) return covering;
+  if (!layer || !svg || !path) return Promise.resolve();
+
+  const { width, height } = layer.getBoundingClientRect();
   const { d, pen } = scribblePath(width, height, direction);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   path.setAttribute('d', d);
   path.setAttribute('stroke-width', String(pen));
-  return path.getTotalLength();
-}
-
-/** Sens du coloriage : vers l'onglet visé dans le menu, sinon de haut en bas. */
-function directionTo(href: string): Direction {
-  const here = normalizePath(location.pathname);
-  const nav = site.mainNav.map((link) => link.href);
-  const from = nav.findIndex((link) => matchesPath(here, link));
-  const to = nav.findIndex((link) => matchesPath(href, link));
-  if (from === -1 || to === -1 || from === to) return 'down';
-  return to > from ? 'right' : 'left';
-}
-
-/** Couvre l'écran puis ouvre `link` (utilisé aussi par le menu mobile). */
-export function leavePage(link: HTMLAnchorElement) {
-  if (leaving) return;
-  if (!layer || !path) {
-    location.assign(link.href);
-    return;
-  }
-  leaving = true;
-
-  const cover: Cover = {
-    to: normalizePath(link.pathname),
-    direction: directionTo(normalizePath(link.pathname)),
-    at: Date.now(),
-  };
-  try {
-    sessionStorage.setItem(COVER_KEY, JSON.stringify(cover));
-  } catch {
-    /* stockage indisponible : la page suivante s'affichera sans être couverte */
-  }
-
-  const length = prepare(cover.direction);
+  const length = path.getTotalLength();
   const gap = length + 200;
 
   layer.style.visibility = 'visible';
   tween?.kill();
-  tween = gsap.fromTo(
-    path,
-    { strokeDasharray: `0 ${gap}`, strokeDashoffset: 0 },
-    {
-      strokeDasharray: `${length} ${gap}`,
-      duration: COVER_DURATION,
-      ease: 'power2.inOut',
-      onComplete: () => location.assign(link.href),
-    },
-  );
+  covering = new Promise((resolve) => {
+    tween = gsap.fromTo(
+      path,
+      { strokeDasharray: `0 ${gap}`, strokeDashoffset: 0 },
+      {
+        strokeDasharray: `${length} ${gap}`,
+        duration: COVER_DURATION,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          covered = { length, pen };
+          resolve();
+        },
+      },
+    );
+  });
+  return covering;
 }
 
-/** Découvre la page si elle arrive couverte. Résout quand le contenu devient visible. */
+/** Efface le coloriage dans le sens où il a été tracé. Résout quand le contenu réapparaît. */
 function reveal(): Promise<void> {
-  if (!root.classList.contains('page-cover') || !layer || !path) return Promise.resolve();
-
-  const length = prepare((root.dataset.coverDirection as Direction | undefined) ?? 'down');
-  const gap = length + 200;
-  const pen = Number(path.getAttribute('stroke-width'));
-
-  // Le fond plein posé en CSS laisse la place au tracé complet, dans la même image.
-  path.style.strokeDasharray = `${length} ${gap}`;
-  path.style.strokeDashoffset = '0';
-  layer.style.visibility = 'visible';
-  root.classList.remove('page-cover');
+  const state = covered;
+  covering = undefined;
+  covered = undefined;
+  if (!layer || !path || !state) return Promise.resolve();
 
   return new Promise((resolve) => {
-    // Le coloriage s'efface dans le sens où il a été tracé.
     tween = gsap.to(path, {
-      strokeDashoffset: -(length + pen),
+      strokeDashoffset: -(state.length + state.pen),
       duration: REVEAL_DURATION,
       ease: 'power2.inOut',
       onComplete: () => {
         layer.style.visibility = '';
-        resolve();
       },
     });
+    // Le contenu commence à s'animer quand l'écran est à moitié découvert.
     gsap.delayedCall(REVEAL_DURATION * 0.4, resolve);
   });
 }
 
 /**
- * Lance les transitions de page. Renvoie une promesse résolue quand le contenu de la page
- * commence à apparaître (tout de suite si la page n'arrive pas couverte).
+ * Lance les transitions de page.
+ * `initPage` anime le contenu d'une page (apparitions, décorations) et renvoie de quoi le
+ * nettoyer : appelé tout de suite pour la première page, puis à chaque nouvelle page, une fois
+ * l'écran en train de se découvrir.
  */
-export function initPageTransition() {
-  document.addEventListener('click', (event) => {
-    const link = (event.target as Element).closest?.<HTMLAnchorElement>('a[href]');
-    if (!link || !isPlainNavigation(event, link) || link.hasAttribute('data-no-transition')) return;
-    // Même page (rechargement) ou fichier (sitemap, PDF…) : navigation normale.
-    if (normalizePath(link.pathname) === normalizePath(location.pathname)) return;
-    if (/\.\w+$/.test(link.pathname)) return;
+export function initPageTransitions(initPage: () => () => void) {
+  let cleanup = initPage();
+  let pageId = 0;
 
-    event.preventDefault();
-    leavePage(link);
+  document.addEventListener('astro:before-preparation', (event) => {
+    const from = normalizePath(event.from.pathname);
+    const to = normalizePath(event.to.pathname);
+    if (from === to) return;
+
+    // L'écran se colorie pendant que la page suivante se télécharge.
+    const load = event.loader;
+    event.loader = async () => {
+      await Promise.all([cover(directionBetween(from, to)), load()]);
+    };
   });
 
-  // Page restaurée du cache (précédent / suivant) après un départ : on retire le calque.
-  window.addEventListener('pageshow', (event) => {
-    if (!event.persisted) return;
-    leaving = false;
-    tween?.kill();
-    root.classList.remove('page-cover');
-    if (layer) layer.style.visibility = '';
+  document.addEventListener('astro:before-swap', () => {
+    cleanup();
+    cleanup = () => {};
   });
 
-  return reveal();
+  document.addEventListener('astro:after-swap', () => {
+    // Le routeur a remis la page en haut (ou à sa position, en revenant en arrière).
+    getLenis()?.resize();
+    getLenis()?.scrollTo(window.scrollY, { immediate: true, force: true });
+
+    const id = ++pageId;
+    reveal().then(() => {
+      if (id !== pageId) return;
+      cleanup = initPage();
+      ScrollTrigger.refresh();
+    });
+  });
 }

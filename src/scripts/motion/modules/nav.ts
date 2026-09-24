@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
-import { drawPath, erasePath, hidePath, setPathProgress } from '../draw';
-import { type Arrival, getArrival, matchesPath, trackDepartures } from '../handoff';
+import { drawPath, erasePath, hidePath, pathProgress, setPathProgress } from '../draw';
+import { matchesPath, normalizePath } from '../route';
 
 const CIRCLE_SPEED = 650;
 const ERASE_SPEED = 1400;
@@ -15,7 +15,6 @@ interface Circle {
   link: HTMLAnchorElement;
   path: SVGPathElement;
   href: string;
-  current: boolean;
   tween?: gsap.core.Tween;
 }
 
@@ -24,47 +23,57 @@ const play = (circle: Circle, tween?: gsap.core.Tween) => {
   circle.tween = tween;
 };
 
+const isCurrent = (circle: Circle) => circle.link.getAttribute('aria-current') === 'page';
+const isVisible = (circle: Circle) => circle.link.getBoundingClientRect().width > 0;
+
 /**
- * Cercles de la navigation, selon d'où l'on vient (voir handoff.ts) :
- * - arrivée directe : le cercle de la page active se dessine après l'intro du logo ;
- * - rechargement, ou lien de la page actuelle : il est déjà là ;
- * - changement de page : le cercle de la page quittée s'efface, puis celui de la nouvelle page
- *   se dessine, ou est déjà là (terminé s'il l'était à moitié) s'il a été tracé au survol.
+ * Premier affichage (chargement complet de la page) : le cercle de la page active se dessine
+ * après l'intro du logo, ou est déjà là si la page est rechargée.
  */
-function playArrival(circles: Circle[], arrival: Arrival, introEnd: number) {
-  const from = 'from' in arrival ? arrival.from : null;
-  let drawAt = 0.15;
+function playIntro(circles: Circle[], introEnd: number) {
+  const reload = document.documentElement.classList.contains('nav-static');
+  document.documentElement.classList.remove('nav-static');
 
   circles.forEach((circle) => {
-    if (circle.current) return;
-    if (matchesPath(from, circle.href) && circle.link.getBoundingClientRect().width > 0) {
-      setPathProgress(circle.path, 1);
+    if (!isCurrent(circle)) return hidePath(circle.path);
+    // Menu mobile fermé : son cercle se dessine à l'ouverture (scripts/menu.ts).
+    if (!isVisible(circle)) return;
+    if (reload) setPathProgress(circle.path, 1);
+    else {
+      hidePath(circle.path);
+      play(circle, drawPath(circle.path, { speed: CIRCLE_SPEED }).delay(introEnd || INTRO_DELAY));
+    }
+  });
+}
+
+/**
+ * Changement de page (le header reste en place) : le cercle de la page quittée s'efface, puis
+ * celui de la nouvelle page se dessine en chevauchement. S'il était déjà tracé au survol, il
+ * reste, et se termine s'il l'était à moitié.
+ */
+function moveCurrent(circles: Circle[], to: string) {
+  let drawAt = 0;
+
+  circles.forEach((circle) => {
+    const next = matchesPath(to, circle.href);
+    if (!isCurrent(circle) || next) return;
+    circle.link.removeAttribute('aria-current');
+    if (isVisible(circle)) {
       const erase = erasePath(circle.path, { speed: HANDOFF_ERASE_SPEED });
       play(circle, erase);
       drawAt = erase.duration() * HANDOFF_OVERLAP;
     } else {
-      // Remet à zéro les cercles restés tracés (page restaurée du cache avec un survol figé).
       play(circle);
       hidePath(circle.path);
     }
   });
 
   circles.forEach((circle) => {
-    // Menu mobile fermé : son cercle se dessine à l'ouverture (scripts/menu.ts).
-    if (!circle.current || circle.link.getBoundingClientRect().width === 0) return;
-    const progress = arrival.kind === 'internal' ? arrival.progress : 0;
-
-    if (arrival.kind === 'reload' || matchesPath(from, circle.href) || progress >= 1) {
-      play(circle);
-      setPathProgress(circle.path, 1);
-    } else if (progress > 0) {
-      setPathProgress(circle.path, progress);
-      play(circle, drawPath(circle.path, { speed: CIRCLE_SPEED }));
-    } else {
-      hidePath(circle.path);
-      const delay = arrival.kind === 'external' ? introEnd || INTRO_DELAY : drawAt;
-      play(circle, drawPath(circle.path, { speed: CIRCLE_SPEED }).delay(delay));
-    }
+    if (!matchesPath(to, circle.href) || isCurrent(circle)) return;
+    circle.link.setAttribute('aria-current', 'page');
+    if (!isVisible(circle)) return;
+    const drawn = pathProgress(circle.path) > 0;
+    play(circle, drawPath(circle.path, { speed: CIRCLE_SPEED }).delay(drawn ? 0 : drawAt));
   });
 }
 
@@ -77,31 +86,30 @@ function initNavCircles(introEnd: number) {
       '[data-scribble="circle"] [data-scribble-path]',
     );
     if (!path) return;
-    const circle: Circle = {
-      link,
-      path,
-      href: link.getAttribute('href') ?? '',
-      current: link.getAttribute('aria-current') === 'page',
-    };
+    const circle: Circle = { link, path, href: link.getAttribute('href') ?? '' };
     circles.push(circle);
-    if (circle.current) return;
 
-    const show = () => play(circle, drawPath(path, { speed: CIRCLE_SPEED, ease: 'power1.inOut' }));
+    const show = () => {
+      if (!isCurrent(circle))
+        play(circle, drawPath(path, { speed: CIRCLE_SPEED, ease: 'power1.inOut' }));
+    };
     const hide = () => {
-      if (link.matches(':hover') || link.matches(':focus-visible')) return;
+      if (isCurrent(circle) || link.matches(':hover') || link.matches(':focus-visible')) return;
       play(circle, erasePath(path, { speed: ERASE_SPEED }));
     };
 
-    // Au doigt, pas de survol : le menu mobile dessine le cercle au tap (scripts/menu.ts).
+    // Au doigt, pas de survol : le cercle se dessine au changement de page.
     link.addEventListener('pointerenter', (event) => event.pointerType !== 'touch' && show());
     link.addEventListener('pointerleave', (event) => event.pointerType !== 'touch' && hide());
     link.addEventListener('focus', () => link.matches(':focus-visible') && show());
     link.addEventListener('blur', hide);
   });
 
-  playArrival(circles, getArrival(), introEnd);
-  window.addEventListener('pageshow', (event) => {
-    if (event.persisted) playArrival(circles, getArrival(), 0);
+  playIntro(circles, introEnd);
+
+  // Header conservé d'une page à l'autre (transition:persist) : les cercles suivent la navigation.
+  document.addEventListener('astro:before-preparation', (event) => {
+    moveCurrent(circles, normalizePath(event.to.pathname));
   });
 }
 
@@ -211,7 +219,6 @@ function initLogo() {
 }
 
 export function initNav() {
-  trackDepartures();
   initNavCircles(initLogo());
   initCoffeeSteam();
 }

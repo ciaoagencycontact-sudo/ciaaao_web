@@ -80,7 +80,7 @@
 
 [data-nav-link]:hover > [data-scribble='circle'],
 [data-nav-link]:focus-visible > [data-scribble='circle'],
-[data-scribble][data-drawn],
+[aria-current='page'] > [data-scribble='circle'],
 [data-coffee]:hover [data-scribble='steam'],
 [aria-expanded='true'] [data-scribble='close'] {
   opacity: 1;
@@ -99,16 +99,9 @@
   opacity: 0;
 }
 
-/* Page qui arrive par une transition : couverte avant le premier rendu (voir modules/transition.ts). */
-.page-cover [data-page-cover] {
-  visibility: visible;
-  background: var(--color-orange);
-}
-
-/* Avant même que le <body> soit lu, le fond de la fenêtre est déjà orange. */
-.page-cover,
-.page-cover body {
-  background: var(--color-orange);
+/* Rechargement : cercle de la page active affiché dès le premier rendu (voir modules/nav.ts). */
+.motion.nav-static [aria-current='page'] > [data-scribble='circle'] [data-scribble-path] {
+  opacity: 1;
 }
 
 /* Intro du logo (une fois par session) : barres masquées jusqu'à leur arrivée. */

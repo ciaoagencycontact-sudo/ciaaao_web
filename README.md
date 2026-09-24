@@ -64,11 +64,12 @@ src/
 GSAP (ScrollTrigger, et SplitText / DrawSVG disponibles) et Lenis pour le scroll fluide, dans
 [`src/scripts/motion/`](src/scripts/motion/) :
 
-- `index.ts` : point d'entrée chargé par `BaseLayout`, qui lance Lenis et les modules ;
+- `index.ts` : point d'entrée chargé par `BaseLayout`, qui lance Lenis et les modules (une fois
+  pour le header, à chaque page pour le contenu) ;
 - `lenis.ts` : scroll fluide synchronisé avec ScrollTrigger, ancres décalées sous le header ;
 - `media.ts` : breakpoints et `gsap.matchMedia()` partagé (desktop / mobile / mouvement réduit) ;
 - `draw.ts` : tracé d'un trait SVG (`drawPath` / `erasePath`), partagé par toutes les animations dessinées ;
-- `handoff.ts` : passage de relais entre pages (d'où l'on vient, lien cliqué, cercle déjà tracé) ;
+- `route.ts` : comparaison de chemins (lien actif) ;
 - `modules/` : une animation = un module (`reveal.ts`, `sketch.ts` pour les décorations, `nav.ts` pour le header).
 
 Le header est « dessiné à la main » : cercle au feutre autour des liens (survol, focus clavier, page
@@ -76,20 +77,18 @@ active), vapeur du café, intro du logo une fois par session, et menu mobile ple
 (`src/scripts/menu.ts`, qui fonctionne aussi sans animations). Les griffonnages réutilisables sont
 dans `src/components/deco/Scribble.astro` et `scribbles.json`.
 
-Le cercle de la page active dépend de la façon dont on arrive (lu avant le premier rendu par le
-script inline de `Header.astro`) :
+Navigation sans rechargement : `<ClientRouter />` (dans `BaseLayout`) télécharge la page suivante
+et ne remplace que le contenu. Le header et le calque de transition sont conservés
+(`transition:persist`), ce qui évite tout écran vide entre deux pages.
 
-- arrivée directe (URL, lien externe, nouvel onglet) : il se dessine après l'intro du logo ;
-- rechargement, ou clic sur la page actuelle : il est déjà là ;
-- clic sur un lien, précédent / suivant : le cercle de la page quittée s'efface, puis celui de la
-  nouvelle page se dessine avec un léger chevauchement. S'il était déjà tracé au survol, il reste
-  (et se termine s'il l'était à moitié) ;
-- menu mobile : le cercle se dessine au tap, puis la page change.
-
-Transition entre les pages (`modules/transition.ts`) : au clic sur un lien interne, un coup de
-feutre orange colorie l'écran sous le header, dans le sens de l'onglet visé (de haut en bas pour
-les autres liens), la page change, puis la nouvelle page, couverte dès le premier rendu, se
-découvre dans le même sens.
+- Transition (`modules/transition.ts`) : pendant le téléchargement, un coup de feutre orange
+  colorie l'écran sous le header, dans le sens de l'onglet visé (de haut en bas pour les autres
+  liens) ; le contenu change dessous, puis le coloriage s'efface dans le même sens.
+- Cercle de la page active : au changement de page, celui de la page quittée s'efface, puis celui
+  de la nouvelle page se dessine avec un léger chevauchement (déjà là s'il était tracé au survol).
+  Au premier chargement, il se dessine après l'intro du logo ; au rechargement, il est déjà là.
+- Un script de composant ne s'exécute qu'une fois : ce qui doit être rebranché à chaque page
+  s'écrit dans `document.addEventListener('astro:page-load', …)` (voir `ContactForm.astro`).
 
 Règles :
 

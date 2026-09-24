@@ -103,9 +103,11 @@ const label = 'text-base font-semibold';
 </form>
 
 <script>
-  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  // Routeur client : ce script ne s'exécute qu'une fois, le formulaire est branché à chaque page.
+  document.addEventListener('astro:page-load', () => {
+    const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+    if (!form) return;
 
-  if (form) {
     const status = form.querySelector<HTMLElement>('[data-status]');
     const submit = form.querySelector<HTMLButtonElement>('[data-submit]');
     const endpoint = form.dataset.endpoint;
@@ -143,5 +145,5 @@ const label = 'text-base font-semibold';
         submit?.removeAttribute('disabled');
       }
     });
-  }
+  });
 </script>

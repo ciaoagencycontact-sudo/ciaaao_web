@@ -5,8 +5,6 @@
  */
 import { gsap } from 'gsap';
 import { drawPath, erasePath, hidePath, setPathProgress } from './motion/draw';
-import { isPlainNavigation } from './motion/handoff';
-import { leavePage } from './motion/modules/transition';
 import { getLenis } from './motion/lenis';
 import { drawSketch } from './motion/modules/sketch';
 
@@ -23,10 +21,12 @@ if (toggle && panel) {
   );
   const items = gsap.utils.toArray<HTMLElement>(panel.querySelectorAll('[data-menu-item]'));
   const sketch = panel.querySelector<SVGSVGElement>('[data-anim="sketch"]');
-  const currentCircle = panel.querySelector<SVGPathElement>(
-    '[aria-current="page"] [data-scribble="circle"] [data-scribble-path]',
-  );
-  const background = [document.getElementById('contenu'), document.querySelector('footer')];
+  // Requêtes à chaque ouverture : le contenu et la page active changent sous le header conservé.
+  const currentCircle = () =>
+    panel.querySelector<SVGPathElement>(
+      '[aria-current="page"] [data-scribble="circle"] [data-scribble-path]',
+    );
+  const background = () => [document.getElementById('contenu'), document.querySelector('footer')];
 
   const withMotion = () => document.documentElement.classList.contains('motion');
   let isOpen = false;
@@ -38,7 +38,7 @@ if (toggle && panel) {
 
     toggle.setAttribute('aria-expanded', String(open));
     if (label) label.textContent = open ? 'Fermer le menu' : 'Ouvrir le menu';
-    background.forEach((element) => element && (element.inert = open));
+    background().forEach((element) => element && (element.inert = open));
     document.documentElement.classList.toggle('overflow-hidden', open);
     if (open) getLenis()?.stop();
     else getLenis()?.start();
@@ -72,9 +72,10 @@ if (toggle && panel) {
             0.08,
           );
         if (sketch) timeline.add(drawSketch(sketch), 0.45);
-        if (currentCircle) {
-          currentCircle.style.opacity = '0';
-          timeline.add(drawPath(currentCircle, { speed: 650 }), 0.55);
+        const circle = currentCircle();
+        if (circle) {
+          circle.style.opacity = '0';
+          timeline.add(drawPath(circle, { speed: 650 }), 0.55);
         }
       }
 
@@ -106,27 +107,15 @@ if (toggle && panel) {
     if (event.key === 'Escape' && isOpen) setOpen(false);
   });
 
+  // Lien d'ancre sur la même page : on referme le menu.
   panel.addEventListener('click', (event) => {
-    const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
-    if (!link) return;
-
-    // Lien d'ancre sur la même page : on referme le menu.
-    if (link.getAttribute('href')?.startsWith('#')) {
+    if ((event.target as HTMLElement).closest('a[href^="#"]'))
       setOpen(false, { restoreFocus: false });
-      return;
-    }
-
-    // Autre page : le cercle se dessine au tap, puis on part (pas de survol au doigt).
-    const circle = link.querySelector<SVGPathElement>(
-      '[data-scribble="circle"] [data-scribble-path]',
-    );
-    if (!circle || !withMotion() || link.getAttribute('aria-current') === 'page') return;
-    if (!isPlainNavigation(event, link)) return;
-    // Le cercle se dessine au tap, pendant que l'écran se colorie par-dessus le menu.
-    event.preventDefault();
-    drawPath(circle, { speed: 650, max: 0.35 });
-    gsap.delayedCall(0.15, () => leavePage(link));
   });
+
+  // Autre page (routeur client, header conservé) : le menu se referme sous le coloriage, une
+  // fois le nouveau contenu en place.
+  document.addEventListener('astro:after-swap', () => setOpen(false, { restoreFocus: false }));
 
   // Page restaurée du cache (précédent / suivant) : le menu est refermé, sans animation.
   window.addEventListener('pageshow', (event) => {
