@@ -4,7 +4,8 @@
  * les animations « dessinées » ne tournent que si la classe .motion est active.
  */
 import { gsap } from 'gsap';
-import { drawPath, erasePath } from './motion/draw';
+import { drawPath, erasePath, hidePath, setPathProgress } from './motion/draw';
+import { isPlainNavigation } from './motion/handoff';
 import { getLenis } from './motion/lenis';
 import { drawSketch } from './motion/modules/sketch';
 
@@ -30,7 +31,7 @@ if (toggle && panel) {
   let isOpen = false;
   let timeline: gsap.core.Timeline | undefined;
 
-  const setOpen = (open: boolean, { restoreFocus = true } = {}) => {
+  const setOpen = (open: boolean, { restoreFocus = true, instant = false } = {}) => {
     if (open === isOpen) return;
     isOpen = open;
 
@@ -78,7 +79,7 @@ if (toggle && panel) {
 
       panel.querySelector<HTMLAnchorElement>('a')?.focus({ preventScroll: true });
     } else {
-      if (withMotion()) {
+      if (withMotion() && !instant) {
         timeline = gsap.timeline({ onComplete: () => (panel.hidden = true) });
         cross.forEach((line) => timeline!.add(erasePath(line, { speed: 500 }), 0));
         burger.forEach((line, index) =>
@@ -87,6 +88,11 @@ if (toggle && panel) {
         timeline.to(panel, { opacity: 0, y: -8, duration: 0.2, ease: 'power1.in' }, 0);
       } else {
         panel.hidden = true;
+        if (withMotion()) {
+          gsap.set(panel, { clearProps: 'opacity,transform' });
+          cross.forEach(hidePath);
+          burger.forEach((line) => setPathProgress(line, 1));
+        }
       }
 
       if (restoreFocus) toggle.focus();
@@ -99,10 +105,31 @@ if (toggle && panel) {
     if (event.key === 'Escape' && isOpen) setOpen(false);
   });
 
-  // Lien d'ancre sur la même page : on referme le menu.
   panel.addEventListener('click', (event) => {
-    if ((event.target as HTMLElement).closest('a[href^="#"]'))
+    const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
+    if (!link) return;
+
+    // Lien d'ancre sur la même page : on referme le menu.
+    if (link.getAttribute('href')?.startsWith('#')) {
       setOpen(false, { restoreFocus: false });
+      return;
+    }
+
+    // Autre page : le cercle se dessine au tap, puis on part (pas de survol au doigt).
+    const circle = link.querySelector<SVGPathElement>(
+      '[data-scribble="circle"] [data-scribble-path]',
+    );
+    if (!circle || !withMotion() || link.getAttribute('aria-current') === 'page') return;
+    if (!isPlainNavigation(event, link)) return;
+    event.preventDefault();
+    drawPath(circle, { speed: 650, max: 0.35 }).eventCallback('onComplete', () =>
+      location.assign(link.href),
+    );
+  });
+
+  // Page restaurée du cache (précédent / suivant) : le menu est refermé, sans animation.
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) setOpen(false, { restoreFocus: false, instant: true });
   });
 
   window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {

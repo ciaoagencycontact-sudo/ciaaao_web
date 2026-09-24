@@ -15,7 +15,11 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
       <Logo class="[--logo-h:36px] lg:[--logo-h:40px]" />
     </a>
 
-    <nav aria-label="Navigation principale" class="hidden items-center gap-12 lg:flex">
+    <nav
+      aria-label="Navigation principale"
+      class="hidden items-center gap-12 lg:flex"
+      data-main-nav
+    >
       <ul class="flex items-center gap-12">
         {site.mainNav.map((link, index) => (
           <li>
@@ -99,6 +103,76 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
       </div>
     </nav>
   </div>
+
+  <script is:inline>
+    /*
+     * Contexte d'arrivée (format et clé : scripts/motion/handoff.ts), lu ici plutôt que dans le
+     * module d'animations : ce script s'exécute pendant la lecture de la page, avant le premier
+     * rendu, et pose tout de suite les cercles qui doivent déjà être là (sans clignotement).
+     */
+    (() => {
+      const root = document.documentElement;
+      if (!root.classList.contains('motion')) return;
+
+      const here = location.pathname.replace(/\/$/, '') || '/';
+      const matches = (path, href) => path === href || path.startsWith(`${href}/`);
+
+      const readDeparture = () => {
+        try {
+          const raw = sessionStorage.getItem('ciaaao:nav-departure');
+          sessionStorage.removeItem('ciaaao:nav-departure');
+          const departure = raw && JSON.parse(raw);
+          return departure && Date.now() - departure.at < 5000 ? departure : null;
+        } catch {
+          return null;
+        }
+      };
+
+      const resolve = (type) => {
+        const departure = readDeparture();
+        if (type === 'reload') return { kind: 'reload' };
+        if (type === 'back_forward') return { kind: 'history', from: departure?.from ?? null };
+        if (departure)
+          return {
+            kind: 'internal',
+            from: departure.from,
+            progress: departure.to === here ? (departure.progress ?? 0) : 0,
+          };
+        return { kind: 'external' };
+      };
+
+      const arrival = resolve(performance.getEntriesByType('navigation')[0]?.type);
+      window.ciaaaoArrival = arrival;
+
+      // Page restaurée du cache (précédent / suivant) : nouveau contexte, rejoué par modules/nav.ts.
+      window.addEventListener('pageshow', (event) => {
+        if (event.persisted) window.ciaaaoArrival = resolve('back_forward');
+      });
+
+      if (!window.matchMedia('(min-width: 64rem)').matches) return;
+      const from = arrival.from ?? null;
+      document.querySelectorAll('[data-main-nav] [data-nav-link]').forEach((link) => {
+        const path = link.querySelector('[data-scribble="circle"] [data-scribble-path]');
+        if (!path) return;
+        const href = link.getAttribute('href');
+        const show = (fraction) => {
+          const length = path.getTotalLength();
+          path.style.opacity = '1';
+          path.style.strokeDasharray = `${length * fraction} ${length + 100}`;
+        };
+
+        if (link.getAttribute('aria-current') === 'page') {
+          // Rechargement, lien de la page actuelle, ou cercle déjà tracé au survol avant le clic.
+          if (arrival.kind === 'reload' || (from && matches(from, href))) show(1);
+          else if (arrival.kind === 'internal' && arrival.progress > 0)
+            show(Math.min(arrival.progress, 1));
+        } else if (from && matches(from, href)) {
+          // Cercle de la page quittée : encore là, il s'effacera.
+          show(1);
+        }
+      });
+    })();
+  </script>
 </header>
 
 <script>

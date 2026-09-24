@@ -68,12 +68,23 @@ GSAP (ScrollTrigger, et SplitText / DrawSVG disponibles) et Lenis pour le scroll
 - `lenis.ts` : scroll fluide synchronisé avec ScrollTrigger, ancres décalées sous le header ;
 - `media.ts` : breakpoints et `gsap.matchMedia()` partagé (desktop / mobile / mouvement réduit) ;
 - `draw.ts` : tracé d'un trait SVG (`drawPath` / `erasePath`), partagé par toutes les animations dessinées ;
+- `handoff.ts` : passage de relais entre pages (d'où l'on vient, lien cliqué, cercle déjà tracé) ;
 - `modules/` : une animation = un module (`reveal.ts`, `sketch.ts` pour les décorations, `nav.ts` pour le header).
 
 Le header est « dessiné à la main » : cercle au feutre autour des liens (survol, focus clavier, page
 active), vapeur du café, intro du logo une fois par session, et menu mobile plein écran
 (`src/scripts/menu.ts`, qui fonctionne aussi sans animations). Les griffonnages réutilisables sont
 dans `src/components/deco/Scribble.astro` et `scribbles.json`.
+
+Le cercle de la page active dépend de la façon dont on arrive (lu avant le premier rendu par le
+script inline de `Header.astro`) :
+
+- arrivée directe (URL, lien externe, nouvel onglet) : il se dessine après l'intro du logo ;
+- rechargement, ou clic sur la page actuelle : il est déjà là ;
+- clic sur un lien, précédent / suivant : le cercle de la page quittée s'efface, puis celui de la
+  nouvelle page se dessine avec un léger chevauchement. S'il était déjà tracé au survol, il reste
+  (et se termine s'il l'était à moitié) ;
+- menu mobile : le cercle se dessine au tap, puis la page change.
 
 Règles :
 
