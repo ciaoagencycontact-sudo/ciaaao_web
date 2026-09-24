@@ -12,6 +12,18 @@ export const site = {
   // Lien de prise de rendez-vous (Cal.com / Calendly). Tant qu'il est vide, les CTA mènent à /contact.
   bookingUrl: '',
 
+  /**
+   * Nom peint sur la transition vers chaque page (modules/transition.ts).
+   * Page absente de la liste : son titre. Accueil : le logo.
+   */
+  transitionLabels: {
+    '/projets': 'Nos projets',
+    '/offres': 'Nos offres',
+    '/la-team': 'La team',
+    '/faq': 'FAQ',
+    '/contact': 'Un petit café ?',
+  } as Record<string, string>,
+
   // Endpoint du formulaire de contact (ex. https://formspree.io/f/xxxxxxx).
   contactFormEndpoint: import.meta.env.PUBLIC_CONTACT_FORM_ENDPOINT ?? '',
 

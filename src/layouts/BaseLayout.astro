@@ -4,6 +4,7 @@ import { Font } from 'astro:assets';
 import { ClientRouter } from 'astro:transitions';
 import Footer from '@/components/layout/Footer.astro';
 import Header from '@/components/layout/Header.astro';
+import PageCover from '@/components/layout/PageCover.astro';
 import { site } from '@/config/site';
 
 interface Props {
@@ -90,20 +91,7 @@ const organization = {
     <script is:inline type="application/ld+json" set:html={JSON.stringify(organization)}></script>
   </head>
   <body class="flex min-h-dvh flex-col">
-    <!--
-      Transition entre les pages : calque colorié au feutre, sous le header.
-      Conservé d'une page à l'autre : il reste en place pendant que le contenu change.
-    -->
-    <div
-      class="pointer-events-none invisible fixed inset-x-0 top-18 bottom-0 z-55 text-orange lg:top-[85px]"
-      aria-hidden="true"
-      data-page-cover
-      transition:persist="page-cover"
-    >
-      <svg class="size-full" fill="none" preserveAspectRatio="none">
-        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-      </svg>
-    </div>
+    <PageCover />
     <a
       href="#contenu"
       class="sr-only z-60 rounded-lg bg-cream px-4 py-2 font-semibold text-ink focus:not-sr-only focus:fixed focus:top-4 focus:left-4"

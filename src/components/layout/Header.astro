@@ -12,7 +12,13 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
 <!-- Conservé d'une page à l'autre (routeur client) : nav, cercles et menu gardent leur état. -->
 <header class="sticky top-0 z-50 bg-orange text-cream" transition:persist="header">
   <div class="container-site flex h-18 items-center justify-between gap-6 lg:h-[85px]">
-    <a href="/" class="rounded-sm" aria-label={`${site.name}, accueil`} data-logo-link>
+    <a
+      href="/"
+      class="rounded-sm"
+      aria-label={`${site.name}, accueil`}
+      data-logo-link
+      data-astro-prefetch="load"
+    >
       <Logo class="[--logo-h:36px] lg:[--logo-h:40px]" />
     </a>
 
@@ -25,6 +31,7 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
               aria-current={isCurrent(link.href) ? 'page' : undefined}
               class="relative inline-block text-xl font-semibold focus-visible:outline-none"
               data-nav-link
+              data-astro-prefetch="load"
             >
               {link.label}
               <!-- Cercle au feutre : survol, focus clavier et page active -->
@@ -81,6 +88,7 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
               aria-current={isCurrent(link.href) ? 'page' : undefined}
               class="relative inline-block px-1 py-2 font-display text-6xl leading-none focus-visible:outline-none"
               data-nav-link
+              data-astro-prefetch="load"
             >
               {link.label}
               <Scribble

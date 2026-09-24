@@ -82,9 +82,13 @@ Navigation sans rechargement : `<ClientRouter />` (dans `BaseLayout`) téléchar
 et ne remplace que le contenu. Le header et le calque de transition sont conservés
 (`transition:persist`), ce qui évite tout écran vide entre deux pages.
 
-- Transition (`modules/transition.ts`) : pendant le téléchargement, un coup de feutre orange
-  colorie l'écran sous le header, dans le sens de l'onglet visé (de haut en bas pour les autres
-  liens) ; le contenu change dessous, puis le coloriage s'efface dans le même sens.
+- Transition (`modules/transition.ts`, calque `components/layout/PageCover.astro`) : pendant le
+  téléchargement, un coup de feutre orange colorie l'écran sous le header, dans le sens de
+  l'onglet visé (de haut en bas pour les autres liens), et le nom de la page y est tamponné en
+  crème (`transitionLabels` dans `site.ts`, sinon le titre de la page ; le logo pour l'accueil).
+  Le contenu change dessous, puis le coloriage s'efface dans le même sens, en emportant le nom.
+- Préchargement (`prefetch` dans `astro.config.mjs`) : les pages sont téléchargées au survol des
+  liens, et celles du header dès le chargement (pas de survol sur mobile).
 - Marque de la page active : au changement de page, celle de la page quittée s'efface, puis celle
   de la nouvelle page se dessine avec un léger chevauchement (déjà là si elle était tracée au
   survol). Au premier chargement, elle se dessine après l'intro du logo ; au rechargement, le

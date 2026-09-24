@@ -1,0 +1,52 @@
+---
+/**
+ * Calque de transition entre les pages (animé par scripts/motion/modules/transition.ts) :
+ * un coup de feutre orange colorie l'écran sous le header, et le nom de la page visée (ou le logo
+ * pour l'accueil) y apparaît en crème. Le nom est masqué par le tracé lui-même : il n'existe que
+ * là où il y a de la peinture, et s'efface avec elle.
+ * Conservé d'une page à l'autre (transition:persist) : il reste en place pendant que le contenu change.
+ */
+import LogoMark from '@/assets/brand/logo-mark.svg';
+import LogoWordmark from '@/assets/brand/logo-wordmark.svg';
+---
+
+<div
+  class="pointer-events-none invisible fixed inset-x-0 top-18 bottom-0 z-55 text-orange lg:top-[85px]"
+  aria-hidden="true"
+  data-page-cover
+  transition:persist="page-cover"
+>
+  <svg class="size-full" fill="none" preserveAspectRatio="none">
+    <defs>
+      <mask id="page-cover-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">
+        <path
+          stroke="white"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          data-cover-stroke
+        ></path>
+      </mask>
+    </defs>
+    <path
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      data-cover-stroke
+    ></path>
+    <g mask="url(#page-cover-mask)" class="text-cream">
+      <g opacity="0" data-cover-label>
+        <text
+          class="font-display"
+          fill="currentColor"
+          text-anchor="middle"
+          dominant-baseline="central"
+          data-cover-title
+        ></text>
+        <g data-cover-logo>
+          <LogoMark data-cover-logo-mark />
+          <LogoWordmark data-cover-logo-wordmark />
+        </g>
+      </g>
+    </g>
+  </svg>
+</div>

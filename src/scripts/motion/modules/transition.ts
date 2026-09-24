@@ -10,18 +10,35 @@ import { matchesPath, normalizePath } from '../route';
  * Le routeur client d'Astro (<ClientRouter /> dans BaseLayout) ne recharge pas la page : il
  * télécharge la suivante et remplace le contenu, en gardant le header et le calque
  * [data-page-cover] (transition:persist). Pendant le téléchargement, un coup de feutre colorie
- * l'écran dans le sens de l'onglet visé ; le contenu change sous le calque, puis le coloriage
- * s'efface dans le même sens.
+ * l'écran dans le sens de l'onglet visé, et le nom de la page visée y apparaît (tamponné en
+ * crème, masqué par la peinture) ; le contenu change sous le calque, puis le coloriage s'efface
+ * dans le même sens, emportant le nom avec lui.
  */
 
 type Direction = 'right' | 'left' | 'down';
 
 const COVER_DURATION = 0.45;
 const REVEAL_DURATION = 0.5;
+/** Le nom est tamponné quand la peinture couvre à peu près la moitié de l'écran… */
+const LABEL_AT = COVER_DURATION * 0.5;
+const LABEL_DURATION = 0.35;
+/** … et reste lisible un instant avant que le contenu change. */
+const LABEL_HOLD = 0.15;
+/** Accueil : le logo remplace le nom. */
+const LOGO = 'logo';
 
 const layer = document.querySelector<HTMLElement>('[data-page-cover]');
 const svg = layer?.querySelector<SVGSVGElement>('svg');
-const path = svg?.querySelector<SVGPathElement>('path');
+// Le tracé peint, et sa copie qui sert de masque au nom.
+const strokes = layer
+  ? gsap.utils.toArray<SVGPathElement>(layer.querySelectorAll('[data-cover-stroke]'))
+  : [];
+const path = strokes.at(-1);
+const label = layer?.querySelector<SVGGElement>('[data-cover-label]');
+const title = layer?.querySelector<SVGTextElement>('[data-cover-title]');
+const logo = layer?.querySelector<SVGGElement>('[data-cover-logo]');
+const logoMark = layer?.querySelector<SVGSVGElement>('[data-cover-logo-mark]');
+const logoWordmark = layer?.querySelector<SVGSVGElement>('[data-cover-logo-wordmark]');
 
 /** Épaisseur du feutre : assez large pour couvrir l'écran en quelques allers-retours. */
 const penWidth = (width: number, height: number) =>
@@ -66,39 +83,115 @@ function directionBetween(from: string, to: string): Direction {
   return end > start ? 'right' : 'left';
 }
 
+/** Nom peint sur la transition vers `to` : réglé dans site.ts, sinon le titre de la page. */
+function labelFor(to: string, newDocument?: Document) {
+  if (to === '/') return LOGO;
+  return site.transitionLabels[to] ?? newDocument?.title.split(' | ')[0];
+}
+
+/** Place le nom (ou le logo) au centre de l'écran, à une taille qui tient en largeur. */
+function layoutLabel(text: string, width: number, height: number) {
+  if (!title || !logo || !logoMark || !logoWordmark) return;
+  const isLogo = text === LOGO;
+  title.textContent = isLogo ? '' : text;
+  logo.style.display = isLogo ? '' : 'none';
+
+  if (isLogo) {
+    // Proportions du composant Logo : barres 198×203 à 83 % de la hauteur du logotype 339×245.
+    const h = gsap.utils.clamp(60, 150, width * 0.12);
+    const markH = h * 0.8286;
+    const markW = (markH * 198) / 203;
+    const wordW = (h * 339) / 245;
+    const gap = h * 0.1837;
+    const x = (width - markW - gap - wordW) / 2;
+    const place = (el: SVGSVGElement, left: number, w: number, hh: number) => {
+      el.setAttribute('x', String(left));
+      el.setAttribute('y', String(height / 2 - hh / 2));
+      el.setAttribute('width', String(w));
+      el.setAttribute('height', String(hh));
+    };
+    place(logoMark, x, markW, markH);
+    place(logoWordmark, x + markW + gap, wordW, h);
+    return;
+  }
+
+  title.setAttribute('x', String(width / 2));
+  title.setAttribute('y', String(height / 2));
+  // Plus grand en proportion sur mobile, où l'écran est étroit.
+  let size = gsap.utils.clamp(48, 170, width * (width < 640 ? 0.17 : 0.13));
+  title.style.fontSize = `${size}px`;
+  // Réduit la taille si le nom dépasse 86 % de la largeur (ex. « Politique de confidentialité »).
+  const fit = (width * 0.86) / title.getComputedTextLength();
+  if (fit < 1) {
+    size *= fit;
+    title.style.fontSize = `${size}px`;
+  }
+}
+
+const wait = (seconds: number) =>
+  new Promise<void>((resolve) => gsap.delayedCall(seconds, resolve));
+
 let tween: gsap.core.Tween | undefined;
 let covering: Promise<void> | undefined;
 let covered: { length: number; pen: number } | undefined;
 
-/** Colorie l'écran ; si un coloriage est déjà en cours (clic pendant une transition), on l'attend. */
-function cover(direction: Direction) {
+/** Tamponne le nom sur la peinture : il arrive légèrement de travers, comme posé à la main. */
+function stampLabel(text: string | undefined, width: number, height: number) {
+  if (!label || !text) return Promise.resolve();
+  layoutLabel(text, width, height);
+  return new Promise<void>((resolve) => {
+    gsap.fromTo(
+      label,
+      { opacity: 0, scale: 0.82, rotation: -9, transformOrigin: '50% 50%' },
+      {
+        opacity: 1,
+        scale: 1,
+        rotation: gsap.utils.random(-4, -1.5),
+        duration: LABEL_DURATION,
+        ease: 'back.out(2.2)',
+        onComplete: () => void wait(LABEL_HOLD).then(resolve),
+      },
+    );
+  });
+}
+
+/**
+ * Colorie l'écran et y tamponne le nom de la page (`text` peut n'être connu qu'une fois la page
+ * téléchargée). Si un coloriage est déjà en cours (clic pendant une transition), on l'attend.
+ */
+function cover(direction: Direction, text: Promise<string | undefined>) {
   if (covering) return covering;
   if (!layer || !svg || !path) return Promise.resolve();
 
   const { width, height } = layer.getBoundingClientRect();
   const { d, pen } = scribblePath(width, height, direction);
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  path.setAttribute('d', d);
-  path.setAttribute('stroke-width', String(pen));
+  strokes.forEach((stroke) => {
+    stroke.setAttribute('d', d);
+    stroke.setAttribute('stroke-width', String(pen));
+  });
   const length = path.getTotalLength();
   const gap = length + 200;
 
   layer.style.visibility = 'visible';
   tween?.kill();
-  covering = new Promise((resolve) => {
+  const painting = new Promise<void>((resolve) => {
     tween = gsap.fromTo(
-      path,
+      strokes,
       { strokeDasharray: `0 ${gap}`, strokeDashoffset: 0 },
       {
         strokeDasharray: `${length} ${gap}`,
         duration: COVER_DURATION,
         ease: 'power2.inOut',
-        onComplete: () => {
-          covered = { length, pen };
-          resolve();
-        },
+        onComplete: resolve,
       },
     );
+  });
+  const stamping = Promise.all([text, wait(LABEL_AT)]).then(([name]) =>
+    stampLabel(name, width, height),
+  );
+  covering = Promise.all([painting, stamping]).then(() => {
+    covered = { length, pen };
   });
   return covering;
 }
@@ -111,12 +204,13 @@ function reveal(): Promise<void> {
   if (!layer || !path || !state) return Promise.resolve();
 
   return new Promise((resolve) => {
-    tween = gsap.to(path, {
+    tween = gsap.to(strokes, {
       strokeDashoffset: -(state.length + state.pen),
       duration: REVEAL_DURATION,
       ease: 'power2.inOut',
       onComplete: () => {
         layer.style.visibility = '';
+        if (label) gsap.set(label, { opacity: 0 });
       },
     });
     // Le contenu commence à s'animer quand l'écran est à moitié découvert.
@@ -142,7 +236,12 @@ export function initPageTransitions(initPage: () => () => void) {
     // L'écran se colorie pendant que la page suivante se télécharge.
     const load = event.loader;
     event.loader = async () => {
-      await Promise.all([cover(directionBetween(from, to)), load()]);
+      const loading = load();
+      const known = labelFor(to);
+      const text = known
+        ? Promise.resolve(known)
+        : loading.then(() => labelFor(to, event.newDocument));
+      await Promise.all([cover(directionBetween(from, to), text), loading]);
     };
   });
 
