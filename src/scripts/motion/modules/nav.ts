@@ -1,41 +1,84 @@
 import { gsap } from 'gsap';
 import { drawPath, erasePath, hidePath } from '../draw';
+import { drawMark, eraseMark, hideMarks, markProgress, showMark } from '../marks';
+import { matchesPath, normalizePath } from '../route';
 
-const CIRCLE_SPEED = 650;
 const ERASE_SPEED = 1400;
+/** Effacement de la marque de la page quittée : plus posé qu'au simple survol. */
+const HANDOFF_ERASE_SPEED = 900;
+/** La nouvelle marque commence quand l'ancienne est effacée à 60 % (chevauchement). */
+const HANDOFF_OVERLAP = 0.6;
+/** Délai de l'intro quand le logo ne joue pas la sienne. */
+const INTRO_DELAY = 0.5;
 
-/** Liens entourés au feutre : tracé au survol / focus clavier, effacé en sens inverse ; page active toujours entourée. */
-function initNavCircles() {
-  document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]').forEach((link) => {
-    const path = link.querySelector<SVGPathElement>(
-      '[data-scribble="circle"] [data-scribble-path]',
-    );
-    if (!path) return;
+const isCurrent = (link: Element) => link.getAttribute('aria-current') === 'page';
+const isVisible = (link: Element) => link.getBoundingClientRect().width > 0;
 
-    if (link.getAttribute('aria-current') === 'page') {
-      // Visible tout de suite si le lien est affiché (desktop), sinon dessiné à l'ouverture du menu.
-      if (link.getBoundingClientRect().width > 0)
-        drawPath(path, { speed: CIRCLE_SPEED }).delay(0.5);
-      return;
+/**
+ * Premier affichage (chargement complet de la page) : la marque de la page active se dessine
+ * après l'intro du logo ; au rechargement, le cercle est déjà là (posé en CSS avant le rendu).
+ */
+function playIntro(links: HTMLAnchorElement[], introEnd: number) {
+  const reload = document.documentElement.classList.contains('nav-static');
+  document.documentElement.classList.remove('nav-static');
+
+  links.forEach((link) => {
+    // Menu mobile fermé : sa marque se dessine à l'ouverture (scripts/menu.ts).
+    if (!isCurrent(link) || !isVisible(link)) return hideMarks(link);
+    if (reload) showMark(link, 'circle');
+    else {
+      hideMarks(link);
+      drawMark(link, { delay: introEnd || INTRO_DELAY });
     }
+  });
+}
 
-    hidePath(path);
-    let tween: gsap.core.Tween | undefined;
+/**
+ * Changement de page (le header reste en place) : la marque de la page quittée s'efface, puis
+ * celle de la nouvelle page se dessine en chevauchement. Si elle était déjà tracée au survol,
+ * elle reste, et se termine si elle l'était à moitié.
+ */
+function moveCurrent(links: HTMLAnchorElement[], to: string) {
+  let drawAt = 0;
 
-    const show = () => {
-      tween?.kill();
-      tween = drawPath(path, { speed: CIRCLE_SPEED, ease: 'power1.inOut' });
-    };
+  links.forEach((link) => {
+    if (!isCurrent(link) || matchesPath(to, link.getAttribute('href') ?? '')) return;
+    link.removeAttribute('aria-current');
+    if (isVisible(link))
+      drawAt = eraseMark(link, { speed: HANDOFF_ERASE_SPEED }).duration() * HANDOFF_OVERLAP;
+    else hideMarks(link);
+  });
+
+  links.forEach((link) => {
+    if (isCurrent(link) || !matchesPath(to, link.getAttribute('href') ?? '')) return;
+    link.setAttribute('aria-current', 'page');
+    if (isVisible(link)) drawMark(link, { delay: markProgress(link) > 0 ? 0 : drawAt });
+  });
+}
+
+/** Liens marqués au feutre : tracé au survol / focus clavier, effacé en sens inverse ; page active toujours marquée. */
+function initNavMarks(introEnd: number) {
+  const links = gsap.utils.toArray<HTMLAnchorElement>('[data-nav-link]');
+
+  links.forEach((link) => {
+    const show = () => !isCurrent(link) && drawMark(link, { ease: 'power1.inOut' });
     const hide = () => {
-      if (link.matches(':hover') || link.matches(':focus-visible')) return;
-      tween?.kill();
-      tween = erasePath(path, { speed: ERASE_SPEED });
+      if (isCurrent(link) || link.matches(':hover') || link.matches(':focus-visible')) return;
+      eraseMark(link, { speed: ERASE_SPEED });
     };
 
-    link.addEventListener('pointerenter', show);
-    link.addEventListener('pointerleave', hide);
+    // Au doigt, pas de survol : la marque se dessine au changement de page.
+    link.addEventListener('pointerenter', (event) => event.pointerType !== 'touch' && show());
+    link.addEventListener('pointerleave', (event) => event.pointerType !== 'touch' && hide());
     link.addEventListener('focus', () => link.matches(':focus-visible') && show());
     link.addEventListener('blur', hide);
+  });
+
+  playIntro(links, introEnd);
+
+  // Header conservé d'une page à l'autre (transition:persist) : les marques suivent la navigation.
+  document.addEventListener('astro:before-preparation', (event) => {
+    moveCurrent(links, normalizePath(event.to.pathname));
   });
 }
 
@@ -81,11 +124,14 @@ function initCoffeeSteam() {
   });
 }
 
-/** Logo : barres qui arrivent une à une (une fois par session), puis frémissent au survol. */
+/**
+ * Logo : barres qui arrivent une à une (une fois par session), puis frémissent au survol.
+ * Renvoie la fin de l'intro, en secondes (0 sans intro).
+ */
 function initLogo() {
   const link = document.querySelector<HTMLElement>('[data-logo-link]');
   const mark = link?.querySelector<SVGSVGElement>('[data-logo-mark]');
-  if (!link || !mark) return;
+  if (!link || !mark) return 0;
 
   const bars = gsap.utils.toArray<SVGPathElement>(mark.querySelectorAll('path'));
   const boxes = new Map(bars.map((bar) => [bar, bar.getBBox()]));
@@ -95,13 +141,14 @@ function initLogo() {
   const vertical = bars.filter((bar) => !horizontal.includes(bar));
 
   const root = document.documentElement;
+  let introEnd = 0;
   if (root.classList.contains('logo-intro')) {
     try {
       sessionStorage.setItem('ciaaao:logo-intro', '1');
     } catch {
       /* stockage indisponible */
     }
-    gsap
+    const intro = gsap
       .timeline({ delay: 0.15 })
       .set(mark, { visibility: 'visible' })
       .call(() => root.classList.remove('logo-intro'))
@@ -117,6 +164,7 @@ function initLogo() {
         { scaleY: 0, transformOrigin: '50% 100%', duration: 0.35, ease: 'back.out(2)' },
         '-=0.1',
       );
+    introEnd = intro.delay() + intro.duration();
   }
 
   let shiver: gsap.core.Timeline | undefined;
@@ -135,10 +183,11 @@ function initLogo() {
       })
       .to(bars, { x: 0, y: 0, rotation: 0, duration: 0.9, ease: 'elastic.out(1, 0.35)' });
   });
+
+  return introEnd;
 }
 
 export function initNav() {
-  initNavCircles();
+  initNavMarks(initLogo());
   initCoffeeSteam();
-  initLogo();
 }

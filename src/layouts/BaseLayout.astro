@@ -1,8 +1,10 @@
 ---
 import '@/styles/global.css';
 import { Font } from 'astro:assets';
+import { ClientRouter } from 'astro:transitions';
 import Footer from '@/components/layout/Footer.astro';
 import Header from '@/components/layout/Header.astro';
+import PageCover from '@/components/layout/PageCover.astro';
 import { site } from '@/config/site';
 
 interface Props {
@@ -38,7 +40,8 @@ const organization = {
 ---
 
 <!doctype html>
-<html lang="fr">
+<!-- Routeur client : seul le contenu change d'une page à l'autre, notre transition remplace celle du navigateur. -->
+<html lang="fr" transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -53,8 +56,12 @@ const organization = {
         } catch {
           /* stockage indisponible : pas d'intro du logo */
         }
+        // Rechargement : le cercle de la page active est déjà là (voir modules/nav.ts).
+        if (performance.getEntriesByType('navigation')[0]?.type === 'reload')
+          root.classList.add('nav-static');
         setTimeout(() => {
-          if (!('motionReady' in root.dataset)) root.classList.remove('motion', 'logo-intro');
+          if (!('motionReady' in root.dataset))
+            root.classList.remove('motion', 'logo-intro', 'nav-static');
         }, 4000);
       }
     </script>
@@ -79,9 +86,12 @@ const organization = {
     <Font cssVariable="--font-dm-sans" preload />
     <Font cssVariable="--font-bitronik" preload />
 
+    <ClientRouter fallback="swap" />
+
     <script is:inline type="application/ld+json" set:html={JSON.stringify(organization)}></script>
   </head>
   <body class="flex min-h-dvh flex-col">
+    <PageCover />
     <a
       href="#contenu"
       class="sr-only z-60 rounded-lg bg-cream px-4 py-2 font-semibold text-ink focus:not-sr-only focus:fixed focus:top-4 focus:left-4"

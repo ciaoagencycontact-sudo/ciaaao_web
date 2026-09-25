@@ -12,6 +12,10 @@ export default defineConfig({
   site,
   // compressHTML reste sur le défaut v7 ('jsx') : c'est la règle d'espaces qu'applique Prettier.
   // Entre deux éléments inline sur des lignes différentes, écrire {' '} pour garder un espace.
+  // Préchargement des pages (routeur client) : au survol pour tous les liens ; les liens du header
+  // (data-astro-prefetch="load") dès le chargement, utile sur mobile où il n'y a pas de survol.
+  // Ignoré sur connexion lente ou en mode économie de données.
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   integrations: [sitemap()],
   vite: {
     plugins: [tailwindcss()],

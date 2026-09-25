@@ -80,3 +80,16 @@ export function hidePath(path: SVGGeometryElement) {
   path.style.opacity = '0';
   path.style.strokeDasharray = `0 ${measure(path).gap}`;
 }
+
+/** Part du trait actuellement tracée, de 0 à 1. */
+export function pathProgress(path: SVGGeometryElement) {
+  const { length } = measure(path);
+  return drawnLength(path, length) / length;
+}
+
+/** Affiche un trait tracé à une fraction donnée (1 : complet), sans animation. */
+export function setPathProgress(path: SVGGeometryElement, fraction: number) {
+  const { length, gap } = measure(path);
+  path.style.opacity = fraction > 0 ? '1' : '0';
+  path.style.strokeDasharray = `${length * gsap.utils.clamp(0, 1, fraction)} ${gap}`;
+}

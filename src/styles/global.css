@@ -80,7 +80,7 @@
 
 [data-nav-link]:hover > [data-scribble='circle'],
 [data-nav-link]:focus-visible > [data-scribble='circle'],
-[data-scribble][data-drawn],
+[aria-current='page'] > [data-scribble='circle'],
 [data-coffee]:hover [data-scribble='steam'],
 [aria-expanded='true'] [data-scribble='close'] {
   opacity: 1;
@@ -90,6 +90,11 @@
   opacity: 0;
 }
 
+/* Sans animation, les liens de navigation n'ont qu'une marque : le cercle. */
+:root:not(.motion) [data-scribble='circle'] [data-mark]:not([data-mark='circle']) {
+  display: none;
+}
+
 /* Avec animations : les SVG restent affichés, GSAP gère chaque trait (modules/nav.ts, scripts/menu.ts). */
 .motion [data-scribble] {
   opacity: 1 !important;
@@ -97,6 +102,11 @@
 
 .motion [data-scribble]:not([data-scribble='burger']) [data-scribble-path] {
   opacity: 0;
+}
+
+/* Rechargement : cercle de la page active affiché dès le premier rendu (voir modules/nav.ts). */
+.motion.nav-static [aria-current='page'] > [data-scribble='circle'] [data-mark='circle'] path {
+  opacity: 1;
 }
 
 /* Intro du logo (une fois par session) : barres masquées jusqu'à leur arrivée. */

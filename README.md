@@ -64,16 +64,37 @@ src/
 GSAP (ScrollTrigger, et SplitText / DrawSVG disponibles) et Lenis pour le scroll fluide, dans
 [`src/scripts/motion/`](src/scripts/motion/) :
 
-- `index.ts` : point d'entrée chargé par `BaseLayout`, qui lance Lenis et les modules ;
+- `index.ts` : point d'entrée chargé par `BaseLayout`, qui lance Lenis et les modules (une fois
+  pour le header, à chaque page pour le contenu) ;
 - `lenis.ts` : scroll fluide synchronisé avec ScrollTrigger, ancres décalées sous le header ;
 - `media.ts` : breakpoints et `gsap.matchMedia()` partagé (desktop / mobile / mouvement réduit) ;
 - `draw.ts` : tracé d'un trait SVG (`drawPath` / `erasePath`), partagé par toutes les animations dessinées ;
+- `route.ts` : comparaison de chemins (lien actif) ;
 - `modules/` : une animation = un module (`reveal.ts`, `sketch.ts` pour les décorations, `nav.ts` pour le header).
 
-Le header est « dessiné à la main » : cercle au feutre autour des liens (survol, focus clavier, page
-active), vapeur du café, intro du logo une fois par session, et menu mobile plein écran
+Le header est « dessiné à la main » : marque au feutre sur les liens (survol, focus clavier, page
+active ; cercle, soulignés, vague, cadre, crochets… tirés au sort à chaque fois, voir
+`src/scripts/motion/marks.ts` et `components/deco/marks.json`), vapeur du café, intro du logo une fois par session, et menu mobile plein écran
 (`src/scripts/menu.ts`, qui fonctionne aussi sans animations). Les griffonnages réutilisables sont
 dans `src/components/deco/Scribble.astro` et `scribbles.json`.
+
+Navigation sans rechargement : `<ClientRouter />` (dans `BaseLayout`) télécharge la page suivante
+et ne remplace que le contenu. Le header et le calque de transition sont conservés
+(`transition:persist`), ce qui évite tout écran vide entre deux pages.
+
+- Transition (`modules/transition.ts`, calque `components/layout/PageCover.astro`) : pendant le
+  téléchargement, un coup de feutre orange colorie l'écran sous le header, dans le sens de
+  l'onglet visé (de haut en bas pour les autres liens), et le nom de la page y est tamponné en
+  crème (`transitionLabels` dans `site.ts`, sinon le titre de la page ; le logo pour l'accueil).
+  Le contenu change dessous, puis le coloriage s'efface dans le même sens, en emportant le nom.
+- Préchargement (`prefetch` dans `astro.config.mjs`) : les pages sont téléchargées au survol des
+  liens, et celles du header dès le chargement (pas de survol sur mobile).
+- Marque de la page active : au changement de page, celle de la page quittée s'efface, puis celle
+  de la nouvelle page se dessine avec un léger chevauchement (déjà là si elle était tracée au
+  survol). Au premier chargement, elle se dessine après l'intro du logo ; au rechargement, le
+  cercle est déjà là.
+- Un script de composant ne s'exécute qu'une fois : ce qui doit être rebranché à chaque page
+  s'écrit dans `document.addEventListener('astro:page-load', …)` (voir `ContactForm.astro`).
 
 Règles :
 

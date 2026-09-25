@@ -4,8 +4,9 @@
  * les animations « dessinées » ne tournent que si la classe .motion est active.
  */
 import { gsap } from 'gsap';
-import { drawPath, erasePath } from './motion/draw';
+import { drawPath, erasePath, hidePath, setPathProgress } from './motion/draw';
 import { getLenis } from './motion/lenis';
+import { drawMark, hideMarks } from './motion/marks';
 import { drawSketch } from './motion/modules/sketch';
 
 const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
@@ -21,22 +22,21 @@ if (toggle && panel) {
   );
   const items = gsap.utils.toArray<HTMLElement>(panel.querySelectorAll('[data-menu-item]'));
   const sketch = panel.querySelector<SVGSVGElement>('[data-anim="sketch"]');
-  const currentCircle = panel.querySelector<SVGPathElement>(
-    '[aria-current="page"] [data-scribble="circle"] [data-scribble-path]',
-  );
-  const background = [document.getElementById('contenu'), document.querySelector('footer')];
+  // Requêtes à chaque ouverture : le contenu et la page active changent sous le header conservé.
+  const currentLink = () => panel.querySelector<HTMLElement>('[aria-current="page"]');
+  const background = () => [document.getElementById('contenu'), document.querySelector('footer')];
 
   const withMotion = () => document.documentElement.classList.contains('motion');
   let isOpen = false;
   let timeline: gsap.core.Timeline | undefined;
 
-  const setOpen = (open: boolean, { restoreFocus = true } = {}) => {
+  const setOpen = (open: boolean, { restoreFocus = true, instant = false } = {}) => {
     if (open === isOpen) return;
     isOpen = open;
 
     toggle.setAttribute('aria-expanded', String(open));
     if (label) label.textContent = open ? 'Fermer le menu' : 'Ouvrir le menu';
-    background.forEach((element) => element && (element.inert = open));
+    background().forEach((element) => element && (element.inert = open));
     document.documentElement.classList.toggle('overflow-hidden', open);
     if (open) getLenis()?.stop();
     else getLenis()?.start();
@@ -70,15 +70,16 @@ if (toggle && panel) {
             0.08,
           );
         if (sketch) timeline.add(drawSketch(sketch), 0.45);
-        if (currentCircle) {
-          currentCircle.style.opacity = '0';
-          timeline.add(drawPath(currentCircle, { speed: 650 }), 0.55);
+        const link = currentLink();
+        if (link) {
+          hideMarks(link);
+          timeline.add(drawMark(link), 0.55);
         }
       }
 
       panel.querySelector<HTMLAnchorElement>('a')?.focus({ preventScroll: true });
     } else {
-      if (withMotion()) {
+      if (withMotion() && !instant) {
         timeline = gsap.timeline({ onComplete: () => (panel.hidden = true) });
         cross.forEach((line) => timeline!.add(erasePath(line, { speed: 500 }), 0));
         burger.forEach((line, index) =>
@@ -87,6 +88,11 @@ if (toggle && panel) {
         timeline.to(panel, { opacity: 0, y: -8, duration: 0.2, ease: 'power1.in' }, 0);
       } else {
         panel.hidden = true;
+        if (withMotion()) {
+          gsap.set(panel, { clearProps: 'opacity,transform' });
+          cross.forEach(hidePath);
+          burger.forEach((line) => setPathProgress(line, 1));
+        }
       }
 
       if (restoreFocus) toggle.focus();
@@ -103,6 +109,15 @@ if (toggle && panel) {
   panel.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).closest('a[href^="#"]'))
       setOpen(false, { restoreFocus: false });
+  });
+
+  // Autre page (routeur client, header conservé) : le menu se referme sous le coloriage, une
+  // fois le nouveau contenu en place.
+  document.addEventListener('astro:after-swap', () => setOpen(false, { restoreFocus: false }));
+
+  // Page restaurée du cache (précédent / suivant) : le menu est refermé, sans animation.
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) setOpen(false, { restoreFocus: false, instant: true });
   });
 
   window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {

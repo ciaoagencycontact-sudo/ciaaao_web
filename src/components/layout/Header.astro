@@ -9,9 +9,16 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 ---
 
-<header class="sticky top-0 z-50 bg-orange text-cream">
+<!-- Conservé d'une page à l'autre (routeur client) : nav, cercles et menu gardent leur état. -->
+<header class="sticky top-0 z-50 bg-orange text-cream" transition:persist="header">
   <div class="container-site flex h-18 items-center justify-between gap-6 lg:h-[85px]">
-    <a href="/" class="rounded-sm" aria-label={`${site.name}, accueil`} data-logo-link>
+    <a
+      href="/"
+      class="rounded-sm"
+      aria-label={`${site.name}, accueil`}
+      data-logo-link
+      data-astro-prefetch="load"
+    >
       <Logo class="[--logo-h:36px] lg:[--logo-h:40px]" />
     </a>
 
@@ -24,6 +31,7 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
               aria-current={isCurrent(link.href) ? 'page' : undefined}
               class="relative inline-block text-xl font-semibold focus-visible:outline-none"
               data-nav-link
+              data-astro-prefetch="load"
             >
               {link.label}
               <!-- Cercle au feutre : survol, focus clavier et page active -->
@@ -31,7 +39,6 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
                 variant="circle"
                 index={index}
                 ratio={2}
-                drawn={isCurrent(link.href)}
                 class="pointer-events-none absolute -top-2.5 -left-4 h-[calc(100%+1.25rem)] w-[calc(100%+2rem)] text-ink"
               />
             </a>
@@ -81,13 +88,13 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
               aria-current={isCurrent(link.href) ? 'page' : undefined}
               class="relative inline-block px-1 py-2 font-display text-6xl leading-none focus-visible:outline-none"
               data-nav-link
+              data-astro-prefetch="load"
             >
               {link.label}
               <Scribble
                 variant="circle"
                 index={index}
                 ratio={3.2}
-                drawn={isCurrent(link.href)}
                 class="pointer-events-none absolute -top-2 -left-5 h-[calc(100%+1rem)] w-[calc(100%+2.5rem)] text-orange"
               />
             </a>

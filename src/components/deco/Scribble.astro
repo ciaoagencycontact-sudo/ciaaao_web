@@ -1,9 +1,14 @@
 ---
 /**
- * Griffonnage au feutre en vrai trait (cercle autour d'un lien, vapeur du café, burger, croix).
+ * Griffonnage au feutre en vrai trait (marque autour d'un lien, vapeur du café, burger, croix).
  * Tracés dans scribbles.json ; animés par scripts/motion/modules/nav.ts et scripts/menu.ts.
+ *
+ * Variante `circle` (liens de navigation) : en plus du cercle, l'ensemble des marques simples de
+ * marks.json (soulignés, vague, cadre, crochets…), une par groupe [data-mark] ; l'animation en
+ * choisit une au hasard à chaque survol. Sans animation, seul le cercle s'affiche.
  * Sans animation (JS absent ou mouvement réduit), l'affichage est géré en CSS (global.css).
  */
+import marks from './marks.json';
 import scribbles from './scribbles.json';
 
 interface Props {
@@ -15,12 +20,10 @@ interface Props {
    * Le tracé est étiré en conséquence pour garder un trait d'épaisseur régulière.
    */
   ratio?: number;
-  /** Déjà dessiné (ex. lien de la page active). */
-  drawn?: boolean;
   class?: string;
 }
 
-const { variant, index = 0, ratio = 2, drawn = false, class: className } = Astro.props;
+const { variant, index = 0, ratio = 2, class: className } = Astro.props;
 
 const { viewBox, width, variants } = scribbles[variant];
 const paths = variants[index % variants.length];
@@ -34,6 +37,10 @@ const scale = (d: string) => {
   );
 };
 const [vw, vh] = viewBox;
+
+// Groupes de traits : un seul pour les griffonnages simples, une marque par groupe pour `circle`.
+const groups: [string | undefined, string[]][] =
+  variant === 'circle' ? [['circle', paths], ...Object.entries(marks)] : [[undefined, paths]];
 ---
 
 <svg
@@ -44,16 +51,19 @@ const [vw, vh] = viewBox;
   aria-hidden="true"
   class={className}
   data-scribble={variant}
-  data-drawn={drawn ? '' : undefined}
 >
-  {paths.map((d) => (
-    <path
-      d={scale(d)}
-      stroke="currentColor"
-      stroke-width={width}
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      data-scribble-path
-    />
+  {groups.map(([mark, strokes]) => (
+    <g data-mark={mark}>
+      {strokes.map((d) => (
+        <path
+          d={scale(d)}
+          stroke="currentColor"
+          stroke-width={width}
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          data-scribble-path
+        />
+      ))}
+    </g>
   ))}
 </svg>
