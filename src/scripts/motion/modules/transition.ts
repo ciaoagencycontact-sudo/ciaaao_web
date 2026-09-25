@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { site } from '@/config/site';
 import { getLenis } from '../lenis';
+import { conditions } from '../media';
 import { matchesPath, normalizePath } from '../route';
 
 /**
@@ -15,7 +16,7 @@ import { matchesPath, normalizePath } from '../route';
  * dans le même sens, emportant le nom avec lui.
  */
 
-type Direction = 'right' | 'left' | 'down';
+type Direction = 'right' | 'left' | 'down' | 'up';
 
 const COVER_DURATION = 0.45;
 const REVEAL_DURATION = 0.5;
@@ -26,6 +27,8 @@ const LABEL_DURATION = 0.35;
 const LABEL_HOLD = 0.15;
 /** Accueil : le logo remplace le nom. */
 const LOGO = 'logo';
+/** Menu mobile : le lien choisi reste seul un instant avant que le rideau tombe (scripts/menu.ts). */
+const MENU_PAUSE = 0.28;
 
 const layer = document.querySelector<HTMLElement>('[data-page-cover]');
 const svg = layer?.querySelector<SVGSVGElement>('svg');
@@ -55,12 +58,14 @@ function scribblePath(width: number, height: number, direction: Direction) {
   const pen = penWidth(width, height);
   // Passes serrées : deux demi-tours voisins restent à moins d'une épaisseur (pas de trou aux bords).
   const step = pen * 0.42;
-  const horizontal = direction !== 'down';
+  const horizontal = direction === 'right' || direction === 'left';
   const along = horizontal ? width : height;
   const across = horizontal ? height : width;
   // Coordonnées (avancée, travers) → écran.
   const toScreen = (a: number, c: number) =>
-    horizontal ? point(direction === 'left' ? width - a : a, c) : point(c, a);
+    horizontal
+      ? point(direction === 'left' ? width - a : a, c)
+      : point(c, direction === 'up' ? height - a : a);
 
   let d = `M${toScreen(-pen, -pen)}`;
   let previous = -pen;
@@ -74,12 +79,18 @@ function scribblePath(width: number, height: number, direction: Direction) {
   return { d, pen };
 }
 
-/** Sens du coloriage : vers l'onglet visé dans le menu, sinon de haut en bas. */
-function directionBetween(from: string, to: string): Direction {
+/**
+ * Sens du coloriage : vers l'onglet visé, dans l'axe du menu. Sur desktop la barre est
+ * horizontale (gauche / droite), sur téléphone le menu est une liste (haut / bas). Revenir en
+ * arrière entre deux onglets rembobine donc naturellement l'aller.
+ * Autres liens : de haut en bas, et de bas en haut en revenant en arrière.
+ */
+function directionBetween(from: string, to: string, back: boolean): Direction {
   const nav = site.mainNav.map((link) => link.href);
   const start = nav.findIndex((link) => matchesPath(from, link));
   const end = nav.findIndex((link) => matchesPath(to, link));
-  if (start === -1 || end === -1 || start === end) return 'down';
+  if (start === -1 || end === -1 || start === end) return back ? 'up' : 'down';
+  if (window.matchMedia(conditions.mobile).matches) return end > start ? 'down' : 'up';
   return end > start ? 'right' : 'left';
 }
 
@@ -155,11 +166,24 @@ function stampLabel(text: string | undefined, width: number, height: number) {
   });
 }
 
+/** Le nom ondule doucement : la page est en route, rien n'est bloqué. */
+function breathe() {
+  if (!label) return undefined;
+  return gsap.to(label, {
+    scale: 1.06,
+    rotation: '+=2.5',
+    duration: 0.7,
+    ease: 'sine.inOut',
+    yoyo: true,
+    repeat: -1,
+  });
+}
+
 /**
  * Colorie l'écran et y tamponne le nom de la page (`text` peut n'être connu qu'une fois la page
  * téléchargée). Si un coloriage est déjà en cours (clic pendant une transition), on l'attend.
  */
-function cover(direction: Direction, text: Promise<string | undefined>) {
+function cover(direction: Direction, text: Promise<string | undefined>, delay = 0) {
   if (covering) return covering;
   if (!layer || !svg || !path) return Promise.resolve();
 
@@ -182,12 +206,13 @@ function cover(direction: Direction, text: Promise<string | undefined>) {
       {
         strokeDasharray: `${length} ${gap}`,
         duration: COVER_DURATION,
+        delay,
         ease: 'power2.inOut',
         onComplete: resolve,
       },
     );
   });
-  const stamping = Promise.all([text, wait(LABEL_AT)]).then(([name]) =>
+  const stamping = Promise.all([text, wait(delay + LABEL_AT)]).then(([name]) =>
     stampLabel(name, width, height),
   );
   covering = Promise.all([painting, stamping]).then(() => {
@@ -228,20 +253,49 @@ export function initPageTransitions(initPage: () => () => void) {
   let cleanup = initPage();
   let pageId = 0;
 
+  // Retour par geste (balayage sur iPhone) : le navigateur anime déjà le passage d'une page à
+  // l'autre, on n'y ajoute pas le coloriage. Écouté en phase de capture, avant le routeur.
+  let nativeGesture = false;
+  window.addEventListener(
+    'popstate',
+    (event) => {
+      nativeGesture = Boolean(
+        (event as PopStateEvent & { hasUAVisualTransition?: boolean }).hasUAVisualTransition,
+      );
+    },
+    { capture: true },
+  );
+
   document.addEventListener('astro:before-preparation', (event) => {
     const from = normalizePath(event.from.pathname);
     const to = normalizePath(event.to.pathname);
-    if (from === to) return;
+    const skip = from === to || (event.navigationType === 'traverse' && nativeGesture);
+    nativeGesture = false;
+    if (skip) return;
+
+    const direction = directionBetween(from, to, event.direction === 'back');
+    // Depuis le menu mobile, le lien choisi reste seul un instant avant que le rideau tombe.
+    const fromMenu = Boolean(
+      event.sourceElement instanceof Element && event.sourceElement.closest('[data-menu]'),
+    );
 
     // L'écran se colorie pendant que la page suivante se télécharge.
     const load = event.loader;
     event.loader = async () => {
-      const loading = load();
+      let loaded = false;
+      const loading = load().finally(() => (loaded = true));
       const known = labelFor(to);
       const text = known
         ? Promise.resolve(known)
         : loading.then(() => labelFor(to, event.newDocument));
-      await Promise.all([cover(directionBetween(from, to), text), loading]);
+      await cover(direction, text, fromMenu ? MENU_PAUSE : 0);
+      // Réseau lent : le nom « respire » tant que la page n'est pas arrivée.
+      const breath = loaded ? undefined : breathe();
+      try {
+        await loading;
+      } finally {
+        breath?.kill();
+      }
     };
   });
 
