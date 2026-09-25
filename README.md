@@ -87,6 +87,14 @@ et ne remplace que le contenu. Le header et le calque de transition sont conserv
   l'onglet visé (de haut en bas pour les autres liens), et le nom de la page y est tamponné en
   crème (`transitionLabels` dans `site.ts`, sinon le titre de la page ; le logo pour l'accueil).
   Le contenu change dessous, puis le coloriage s'efface dans le même sens, en emportant le nom.
+- Sens du coloriage : dans l'axe du menu (gauche / droite sur desktop, haut / bas sur téléphone
+  où le menu est une liste), rembobiné en revenant en arrière. Pas de coloriage après le geste
+  « retour » natif (balayage sur iPhone), qui anime déjà le passage. Réseau lent : le nom ondule
+  tant que la page n'est pas arrivée.
+- Menu mobile : au tap, le lien choisi reste seul (sa marque se dessine), les autres s'effacent,
+  puis le rideau tombe ; le menu se referme dessous.
+- Lien vers la page actuelle (menu, logo…) : pas de rechargement, le menu se ferme et la page
+  remonte en haut (`scripts/menu.ts`).
 - Préchargement (`prefetch` dans `astro.config.mjs`) : les pages sont téléchargées au survol des
   liens, et celles du header dès le chargement (pas de survol sur mobile).
 - Marque de la page active : au changement de page, celle de la page quittée s'efface, puis celle

@@ -1,5 +1,5 @@
 /**
- * Menu mobile plein écran.
+ * Menu mobile plein écran, et liens vers la page où l'on est déjà.
  * Le comportement (ouverture, focus, Échap, blocage du scroll) fonctionne partout ;
  * les animations « dessinées » ne tournent que si la classe .motion est active.
  */
@@ -8,6 +8,7 @@ import { drawPath, erasePath, hidePath, setPathProgress } from './motion/draw';
 import { getLenis } from './motion/lenis';
 import { drawMark, hideMarks } from './motion/marks';
 import { drawSketch } from './motion/modules/sketch';
+import { normalizePath } from './motion/route';
 
 const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
 const panel = document.querySelector<HTMLElement>('[data-menu]');
@@ -111,9 +112,33 @@ if (toggle && panel) {
       setOpen(false, { restoreFocus: false });
   });
 
-  // Autre page (routeur client, header conservé) : le menu se referme sous le coloriage, une
-  // fois le nouveau contenu en place.
-  document.addEventListener('astro:after-swap', () => setOpen(false, { restoreFocus: false }));
+  // Autre page choisie dans le menu : le lien tapé reste seul (sa marque se dessine, voir
+  // modules/nav.ts), les autres s'effacent, puis le rideau tombe (modules/transition.ts).
+  document.addEventListener('astro:before-preparation', (event) => {
+    const chosen =
+      event.sourceElement instanceof Element
+        ? event.sourceElement.closest('[data-menu-item]')
+        : null;
+    if (!isOpen || !chosen || !withMotion()) return;
+    timeline?.kill();
+    timeline = gsap
+      .timeline()
+      .to([...items.filter((item) => item !== chosen), sketch].filter(Boolean), {
+        opacity: 0,
+        x: -24,
+        rotation: -3,
+        duration: 0.25,
+        stagger: 0.04,
+        ease: 'power2.in',
+      });
+  });
+
+  // Nouveau contenu en place (routeur client, header conservé) : le menu se referme sous le
+  // coloriage.
+  document.addEventListener('astro:after-swap', () => {
+    setOpen(false, { restoreFocus: false });
+    gsap.set([...items, sketch].filter(Boolean), { clearProps: 'x,rotation' });
+  });
 
   // Page restaurée du cache (précédent / suivant) : le menu est refermé, sans animation.
   window.addEventListener('pageshow', (event) => {
@@ -123,4 +148,24 @@ if (toggle && panel) {
   window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
     if (event.matches) setOpen(false, { restoreFocus: false });
   });
+
+  // Lien vers la page où l'on est déjà (menu, logo, footer…) : pas de rechargement du contenu,
+  // on referme le menu et on remonte en haut. En phase de capture, avant le routeur.
+  document.addEventListener(
+    'click',
+    (event) => {
+      const link = (event.target as Element).closest?.<HTMLAnchorElement>('a[href]');
+      if (!link || event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if ((link.target && link.target !== '_self') || link.origin !== location.origin) return;
+      if (link.hash || normalizePath(link.pathname) !== normalizePath(location.pathname)) return;
+
+      event.preventDefault();
+      setOpen(false, { restoreFocus: false });
+      const lenis = getLenis();
+      if (lenis) lenis.scrollTo(0, { duration: 0.9 });
+      else window.scrollTo({ top: 0, behavior: withMotion() ? 'smooth' : 'auto' });
+    },
+    { capture: true },
+  );
 }
